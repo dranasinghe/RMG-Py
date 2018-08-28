@@ -32,10 +32,12 @@
 Contains functions for generating reactions.
 """
 import itertools
+import logging
+import resource
+import psutil
 
 from rmgpy.data.rmg import getDB
-from rmgpy.scoop_framework.util import map_
-
+from multiprocessing import Pool
 
 def react(*spcTuples):
     """
@@ -54,13 +56,29 @@ def react(*spcTuples):
     Returns a flat generator object containing the generated Reaction objects.
     """
 
-    results = map_(
+    from rmgpy.rmg.main import maxproc
+    
+    # Available RAM memory (kB)
+    mem = psutil.virtual_memory()
+    usermem = mem.available
+    
+    tmp = divmod(usermem, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    tmp2 = min(maxproc, tmp[0])
+    procnum = max(1, tmp2)
+    logging.info('For reaction generation {0} processes are used.'.format(procnum))
+
+    # Execute multiprocessing map. It blocks until the result is ready.
+    # This method chops the iterable into a number of chunks which it 
+    # submits to the process pool as separate tasks. 
+    p = Pool(processes=procnum)
+    
+    reactions = p.map(
                 reactSpecies,
                 spcTuples)
+    p.close()
+    p.join()
 
-    reactions = itertools.chain.from_iterable(results)
-
-    return reactions
+    return itertools.chain.from_iterable(reactions)
 
 
 def reactSpecies(speciesTuple):
@@ -74,43 +92,7 @@ def reactSpecies(speciesTuple):
 
     reactions = getDB('kinetics').generate_reactions_from_families(speciesTuple)
 
-    deflate(reactions,
-            [spec for spec in speciesTuple],
-            [spec.index for spec in speciesTuple])
-
     return reactions
-
-
-def deflate(rxns, species, reactantIndices):
-    """
-    The purpose of this function is to replace the reactants and
-    products of a reaction, stored as Molecule objects by 
-    integer indices, corresponding to the species core index.
-
-    Creates a dictionary with Molecule objects as keys and newly 
-    created Species objects as values.
-
-    It iterates over the reactantIndices array, with elements in this array
-    corresponding to the indices of the core species. It creates a 
-    Molecule -> index entry in the previously created dictionary.
-
-    It iterates over the reaction list, and iteratively updates the
-    created dictionary as more reactions are processed.    
-    """    
-
-    molDict = {}
-
-    for i, coreIndex in enumerate(reactantIndices):
-        if coreIndex != -1:
-            for mol in species[i].molecule:
-                molDict[mol] = coreIndex
-
-    for rxn in rxns:
-        deflateReaction(rxn, molDict)
-        try:
-            deflateReaction(rxn.reverse, molDict) 
-        except AttributeError:
-            pass
 
 
 def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact, trimolecularReact=None):
@@ -142,29 +124,3 @@ def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact
 
     rxns = list(react(*spcTuples))
     return rxns
-
-
-def deflateReaction(rxn, molDict):
-    """
-    This function deflates a single reaction holding species objects, and uses the provided
-    dictionary to populate reactants/products/pairs with integer indices,
-    if possible.
-
-    If the Molecule object could not be found in the dictionary, a new
-    dictionary entry is created, using the Species object as the value
-    for the entry.
-
-    The reactants/products/pairs of both the forward and reverse reaction 
-    object are populated with the value of the dictionary, either an
-    integer index, or either a Species object.
-    """
-    for spec in itertools.chain(rxn.reactants, rxn.products):
-        if not spec.molecule[0] in molDict:
-            molDict[spec.molecule[0]] = spec
-
-    rxn.reactants = [molDict[spec.molecule[0]] for spec in rxn.reactants]
-    rxn.products = [molDict[spec.molecule[0]] for spec in rxn.products]
-    try:
-        rxn.pairs = [(molDict[reactant.molecule[0]], molDict[product.molecule[0]]) for reactant, product in rxn.pairs]
-    except ValueError:
-        rxn.pairs = None
