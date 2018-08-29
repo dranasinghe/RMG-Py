@@ -35,6 +35,8 @@ import itertools
 import logging
 import resource
 import psutil
+import os
+from sys import platform
 
 from rmgpy.data.rmg import getDB
 from multiprocessing import Pool
@@ -94,6 +96,7 @@ def react(*spcTuples):
     reactions = p.map(
                 reactSpecies,
                 spcTuples)
+
     p.close()
     p.join()
 
@@ -104,7 +107,7 @@ def reactSpecies(speciesTupleTmp):
     """
     Given a tuple of Species objects, generates all possible reactions
     from the loaded reaction families and combines degenerate reactions.
-    """ 
+    """
 
     speciesTuple = speciesTupleTmp[0:-1]
     own_families = speciesTupleTmp[-1]
