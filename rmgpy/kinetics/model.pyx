@@ -31,8 +31,8 @@
 This module contains base classes that represent various rate coefficient
 models.
 """
-
 import numpy
+import numpy as np
 
 import rmgpy.quantity as quantity
 from rmgpy.molecule import Molecule
@@ -108,11 +108,12 @@ cdef class KineticsModel:
 
     """
     
-    def __init__(self, Tmin=None, Tmax=None, Pmin=None, Pmax=None, comment=''):
+    def __init__(self, Tmin=None, Tmax=None, Pmin=None, Pmax=None, uncertainty=None, comment=''):
         self.Tmin = Tmin
         self.Tmax = Tmax
         self.Pmin = Pmin
         self.Pmax = Pmax
+        self.uncertainty = uncertainty
         self.comment = comment
         
     def __repr__(self):
@@ -120,13 +121,13 @@ cdef class KineticsModel:
         Return a string representation that can be used to reconstruct the
         KineticsModel object.
         """
-        return 'KineticsModel(Tmin={0!r}, Tmax={1!r}, Pmin={0!r}, Pmax={1!r}, comment="""{2}""")'.format(self.Tmin, self.Tmax, self.Pmin, self.Pmax, self.comment)
+        return 'KineticsModel(Tmin={0!r}, Tmax={1!r}, Pmin={0!r}, Pmax={1!r}, comment="""{2}""")'.format(self.Tmin, self.Tmax, self.Pmin, self.Pmax, self.uncertainty, self.comment)
 
     def __reduce__(self):
         """
         A helper function used when pickling a KineticsModel object.
         """
-        return (KineticsModel, (self.Tmin, self.Tmax, self.Pmin, self.Pmax, self.comment))
+        return (KineticsModel, (self.Tmin, self.Tmax, self.Pmin, self.Pmax, self.uncertainty, self.comment))
 
     property Tmin:
         """The minimum temperature at which the model is valid, or ``None`` if not defined."""
@@ -155,6 +156,12 @@ cdef class KineticsModel:
             return self._Pmax
         def __set__(self, value):
             self._Pmax = quantity.Pressure(value)
+    
+    property uncertainty:
+        def __get__(self):
+            return self._uncertainty
+        def __set__(self, value):
+            self._uncertainty = value
 
     cpdef bint isPressureDependent(self) except -2:
         """
@@ -286,8 +293,8 @@ cdef class PDepKineticsModel(KineticsModel):
 
     """
     
-    def __init__(self, Tmin=None, Tmax=None, Pmin=None, Pmax=None, efficiencies=None, highPlimit=None, comment=''):
-        KineticsModel.__init__(self, Tmin, Tmax, Pmin, Pmax, comment)
+    def __init__(self, Tmin=None, Tmax=None, Pmin=None, Pmax=None, efficiencies=None, highPlimit=None, uncertainty=None, comment=''):
+        KineticsModel.__init__(self, Tmin=Tmin, Tmax=Tmax, Pmin=Pmin, Pmax=Pmax, uncertainty=uncertainty, comment=comment)
         self.efficiencies = {}
         if efficiencies: 
             for mol, eff in efficiencies.iteritems():
