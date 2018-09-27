@@ -31,8 +31,8 @@
 """
 This module contains classes and functions for working with chemical reactions.
 
-From the `IUPAC Compendium of Chemical Terminology 
-<http://dx.doi.org/10.1351/goldbook>`_, a chemical reaction is "a process that 
+From the `IUPAC Compendium of Chemical Terminology
+<http://dx.doi.org/10.1351/goldbook>`_, a chemical reaction is "a process that
 results in the interconversion of chemical species".
 
 In RMG Py, a chemical reaction is represented in memory as a :class:`Reaction`
@@ -56,7 +56,7 @@ from rmgpy.species import Species
 from rmgpy.kinetics.arrhenius import Arrhenius #PyDev: @UnresolvedImport
 from rmgpy.kinetics import KineticsData, ArrheniusEP, ThirdBody, Lindemann, Troe, Chebyshev, \
             PDepArrhenius, MultiArrhenius, MultiPDepArrhenius, getRateCoefficientUnitsFromReactionOrder, \
-            StickingCoefficient, SurfaceArrhenius, SurfaceArrheniusBEP, StickingCoefficientBEP  #PyDev: @UnresolvedImport
+            StickingCoefficient, SurfaceArrhenius, SurfaceArrheniusBEP, StickingCoefficientBEP, ArrheniusBM  #PyDev: @UnresolvedImport
 from rmgpy.pdep.reaction import calculateMicrocanonicalRateCoefficient
 from rmgpy.exceptions import ReactionError, KineticsError
 from rmgpy.kinetics.diffusionLimited import diffusionLimiter
@@ -66,7 +66,7 @@ from rmgpy.kinetics.diffusionLimited import diffusionLimiter
 class Reaction:
     """
     A chemical reaction. The attributes are:
-    
+
     =================== =========================== ============================
     Attribute           Type                        Description
     =================== =========================== ============================
@@ -90,9 +90,9 @@ class Reaction:
     `is_forward`        ``bool``                    Indicates if the reaction was generated in the forward (true) or reverse (false)
     `rank`              ``int``                     Integer indicating the accuracy of the kinetics for this reaction
     =================== =========================== ============================
-    
+
     """
-    
+
     def __init__(self,
                  index=-1,
                  label='',
@@ -164,15 +164,15 @@ class Reaction:
         If a specificCollider exists, the srting representation is 'A + B (+S) <=> C + D (+S)'.
         """
         return self.toLabeledStr(use_index=True)
-    
+
     def toLabeledStr(self, use_index=False):
         """
-        the same as __str__ except that the labels are assumed to exist and used for reactant and products rather than 
+        the same as __str__ except that the labels are assumed to exist and used for reactant and products rather than
         the labels plus the index in parentheses
         """
         arrow = ' <=> '
         if not self.reversible: arrow = ' => '
-        
+
         if self.specificCollider:
             return arrow.join([' + '.join([str(s) if use_index else s.label for s in self.reactants])+' (+'+str(self.specificCollider)+')', ' + '.join([str(s) if use_index else s.label for s in self.products])+' (+'+str(self.specificCollider)+')'])
         else:
@@ -233,7 +233,7 @@ class Reaction:
     def toChemkin(self, speciesList=None, kinetics=True):
         """
         Return the chemkin-formatted string for this reaction.
-        
+
         If `kinetics` is set to True, the chemkin format kinetics will also
         be returned (requires the `speciesList` to figure out third body colliders.)
         Otherwise, only the reaction string will be returned.
@@ -243,7 +243,7 @@ class Reaction:
             return rmgpy.chemkin.writeKineticsEntry(self, speciesList)
         else:
             return rmgpy.chemkin.writeReactionString(self)
-    
+
     def toCantera(self, speciesList=None, useChemkinIdentifier = False):
         """
         Converts the RMG Reaction object to a Cantera Reaction object
@@ -253,12 +253,12 @@ class Reaction:
         instead. Be sure that species' labels are unique when setting it False.
         """
         from rmgpy.kinetics import Arrhenius, ArrheniusEP, MultiArrhenius, PDepArrhenius, MultiPDepArrhenius, Chebyshev, ThirdBody, Lindemann, Troe
-                    
+
         import cantera as ct
-        
+
         if speciesList is None:
             speciesList = []
-        
+
         # Create the dictionaries containing species strings and their stoichiometries
         # for initializing the cantera reaction object
         ctReactants = {}
@@ -284,7 +284,7 @@ class Reaction:
                 ctProducts[productName] = 1
         if self.specificCollider:              # add a specific collider if exists
             ctCollider[self.specificCollider.toChemkin() if useChemkinIdentifier else self.specificCollider.label] = 1
-                
+
         if self.kinetics:
             if isinstance(self.kinetics, Arrhenius):
                 # Create an Elementary Reaction
@@ -292,23 +292,23 @@ class Reaction:
             elif isinstance(self.kinetics, MultiArrhenius):
                 # Return a list of elementary reactions which are duplicates
                 ctReaction = [ct.ElementaryReaction(reactants=ctReactants, products=ctProducts) for arr in self.kinetics.arrhenius]
-                
+
             elif isinstance(self.kinetics, PDepArrhenius):
                 ctReaction = ct.PlogReaction(reactants=ctReactants, products=ctProducts)
-                
+
             elif isinstance(self.kinetics, MultiPDepArrhenius):
                 ctReaction = [ct.PlogReaction(reactants=ctReactants, products=ctProducts) for arr in self.kinetics.arrhenius]
-                
-            
+
+
             elif isinstance(self.kinetics, Chebyshev):
                 ctReaction = ct.ChebyshevReaction(reactants=ctReactants, products=ctProducts)
-            
+
             elif isinstance(self.kinetics, ThirdBody):
                 if ctCollider is not None:
                     ctReaction = ct.ThreeBodyReaction(reactants=ctReactants, products=ctProducts, tbody=ctCollider)
                 else:
                     ctReaction = ct.ThreeBodyReaction(reactants=ctReactants, products=ctProducts)
-                
+
             elif isinstance(self.kinetics, Lindemann) or isinstance(self.kinetics, Troe):
                 if ctCollider is not None:
                     ctReaction = ct.FalloffReaction(reactants=ctReactants, products=ctProducts, tbody=ctCollider)
@@ -316,29 +316,29 @@ class Reaction:
                     ctReaction = ct.FalloffReaction(reactants=ctReactants, products=ctProducts)
             else:
                 raise NotImplementedError('Unable to set cantera kinetics for {0}'.format(self.kinetics))
-            
-            
+
+
             # Set reversibility, duplicate, and ID attributes
             if isinstance(ctReaction,list):
                 for rxn in ctReaction:
                     rxn.reversible = self.reversible
-                    # Set the duplicate flag to true since this reaction comes from multiarrhenius or multipdeparrhenius 
+                    # Set the duplicate flag to true since this reaction comes from multiarrhenius or multipdeparrhenius
                     rxn.duplicate = True
-                    # Set the ID flag to the original rmg index 
-                    rxn.ID = str(self.index) 
+                    # Set the ID flag to the original rmg index
+                    rxn.ID = str(self.index)
             else:
                 ctReaction.reversible = self.reversible
                 ctReaction.duplicate = self.duplicate
                 ctReaction.ID = str(self.index)
-                
-            
+
+
             self.kinetics.setCanteraKinetics(ctReaction, speciesList)
-            
+
             return ctReaction
-                
+
         else:
             raise Exception('Cantera reaction cannot be created because there was no kinetics.')
-    
+
     def getURL(self):
         """
         Get a URL to search for this reaction in the rmg website.
@@ -357,7 +357,7 @@ class Reaction:
 
         url = base_url + urllib.quote(rxn_string)
         return url.strip('_')
-        
+
     def isIsomerization(self):
         """
         Return ``True`` if the reaction represents an isomerization reaction
@@ -378,7 +378,7 @@ class Reaction:
         :math:`\\ce{A <=> B + C}` or ``False`` if not.
         """
         return len(self.reactants) == 1 and len(self.products) > 1
-    
+
     def isUnimolecular(self):
         """
         Return ``True`` if the reaction has a single molecule as either reactant or product (or both)
@@ -486,7 +486,7 @@ class Reaction:
             return True
         if not eitherDirection:
             return False
-        
+
         # Compare reactants to products
         reverseReactantsMatch = same_species_lists(self.reactants, other.products,
                                                    check_identical=checkIdentical,
@@ -629,7 +629,7 @@ class Reaction:
         Return the overall rate coefficient for the forward reaction at
         temperature `T` in K and pressure `P` in Pa, including any reaction
         path degeneracies.
-        
+
         If diffusionLimiter is enabled, the reaction is in the liquid phase and we use
         a diffusion limitation to correct the rate. If not, then use the intrinsic rate
         coefficient.
@@ -650,7 +650,7 @@ class Reaction:
         temperature `T` in K with surface site density `surfaceSiteDensity` in mol/m2.
         Value is returned in combination of [m,mol,s]
         """
-        cython.declare(rateCoefficient=cython.double, 
+        cython.declare(rateCoefficient=cython.double,
                        molecularWeight_kg=cython.double, )
 
         if diffusionLimiter.enabled:
@@ -715,7 +715,7 @@ class Reaction:
         """
         Turns the kinetics into Arrhenius (if they were ArrheniusEP)
         and ensures the activation energy is at least the endothermicity
-        for endothermic reactions, and is not negative only as a result 
+        for endothermic reactions, and is not negative only as a result
         of using Evans Polanyi with an exothermic reaction.
         If `forcePositive` is True, then all reactions
         are forced to have a non-negative barrier.
@@ -728,7 +728,7 @@ class Reaction:
         H298 = self.getEnthalpyOfReaction(298)
         H0 = sum([spec.getThermoData().E0.value_si for spec in self.products]) \
             - sum([spec.getThermoData().E0.value_si for spec in self.reactants])
-        if isinstance(self.kinetics, (ArrheniusEP, SurfaceArrheniusBEP, StickingCoefficientBEP)):
+        if isinstance(self.kinetics, (ArrheniusEP, SurfaceArrheniusBEP, StickingCoefficientBEP, ArrheniusBM)):
             Ea = self.kinetics.E0.value_si # temporarily using Ea to store the intrinsic barrier height E0
             self.kinetics = self.kinetics.toArrhenius(H298)
             if self.kinetics.Ea.value_si < 0.0 and self.kinetics.Ea.value_si < Ea:
@@ -779,10 +779,10 @@ class Reaction:
         kr = Arrhenius()
         kr.fitToData(Tlist, klist, reverseUnits, kf.T0.value_si)
         return kr
-        
+
     def generateReverseRateCoefficient(self, network_kinetics=False):
         """
-        Generate and return a rate coefficient model for the reverse reaction. 
+        Generate and return a rate coefficient model for the reverse reaction.
         Currently this only works if the `kinetics` attribute is one of several
         (but not necessarily all) kinetics types.
         """
@@ -804,25 +804,25 @@ class Reaction:
 
         # Get the units for the reverse rate coefficient
         kunits = getRateCoefficientUnitsFromReactionOrder(len(self.products))
-            
+
         kf = self.kinetics
         if isinstance(kf, KineticsData):
-            
+
             Tlist = kf.Tdata.value_si
             klist = numpy.zeros_like(Tlist)
             for i in range(len(Tlist)):
                 klist[i] = kf.getRateCoefficient(Tlist[i]) / self.getEquilibriumConstant(Tlist[i])
-            
+
             kr = KineticsData(Tdata=(Tlist,"K"), kdata=(klist,kunits), Tmin=(numpy.min(Tlist),"K"), Tmax=(numpy.max(Tlist),"K"))
             return kr
-            
+
         elif isinstance(kf, Arrhenius):
             return self.reverseThisArrheniusRate(kf, kunits)
 
         elif network_kinetics and self.network_kinetics is not None:
             kf = self.network_kinetics
             return self.reverseThisArrheniusRate(kf, kunits)
-                    
+
         elif isinstance (kf, Chebyshev):
             Tlist = 1.0/numpy.linspace(1.0/kf.Tmax.value, 1.0/kf.Tmin.value, 50)
             Plist = numpy.linspace(kf.Pmin.value, kf.Pmax.value, 20)
@@ -833,8 +833,8 @@ class Reaction:
             kr = Chebyshev()
             kr.fitToData(Tlist, Plist, K, kunits, kf.degreeT, kf.degreeP, kf.Tmin.value, kf.Tmax.value, kf.Pmin.value, kf.Pmax.value)
             return kr
-        
-        elif isinstance(kf, PDepArrhenius):  
+
+        elif isinstance(kf, PDepArrhenius):
             if kf.Tmin is not None and kf.Tmax is not None:
                 Tlist = 1.0/numpy.linspace(1.0/kf.Tmax.value, 1.0/kf.Tmin.value, 50)
             else:
@@ -846,21 +846,21 @@ class Reaction:
                     K[Tindex, Pindex] = kf.getRateCoefficient(T, P) / self.getEquilibriumConstant(T)
             kr = PDepArrhenius()
             kr.fitToData(Tlist, Plist, K, kunits, kf.arrhenius[0].T0.value)
-            return kr       
-        
+            return kr
+
         elif isinstance(kf, MultiArrhenius):
             kr = MultiArrhenius()
-            kr.arrhenius = []            
-            rxn = Reaction(reactants = self.reactants, products = self.products)            
+            kr.arrhenius = []
+            rxn = Reaction(reactants = self.reactants, products = self.products)
             for kinetics in kf.arrhenius:
                 rxn.kinetics = kinetics
                 kr.arrhenius.append(rxn.generateReverseRateCoefficient())
             return kr
-        
+
         elif isinstance(kf, MultiPDepArrhenius):
-            kr = MultiPDepArrhenius()              
-            kr.arrhenius = []                
-            rxn = Reaction(reactants = self.reactants, products = self.products)            
+            kr = MultiPDepArrhenius()
+            kr.arrhenius = []
+            rxn = Reaction(reactants = self.reactants, products = self.products)
             for kinetics in kf.arrhenius:
                 rxn.kinetics = kinetics
                 kr.arrhenius.append(rxn.generateReverseRateCoefficient())
@@ -909,7 +909,7 @@ class Reaction:
         temperature, :math:`k_\\mathrm{B}` is the Boltzmann constant, and :math:`h`
         is the Planck constant. :math:`\\kappa(T)` is an optional tunneling
         correction.
-        """       
+        """
         # Determine TST rate constant at each temperature
         Qreac = 1.0
         E0 = 0.0
@@ -921,12 +921,12 @@ class Reaction:
         Qts = self.transitionState.getPartitionFunction(T) / (constants.R * T / 101325.)
         E0 += self.transitionState.conformer.E0.value_si
         k = (constants.kB * T / constants.h * Qts / Qreac) * math.exp(-E0 / constants.R / T)
-        
+
         # Apply tunneling correction
         k *= self.transitionState.calculateTunnelingFactor(T)
-        
+
         return k
-        
+
     def canTST(self):
         """
         Return ``True`` if the necessary parameters are available for using
@@ -939,20 +939,20 @@ class Reaction:
     def calculateMicrocanonicalRateCoefficient(self, Elist, Jlist, reacDensStates, prodDensStates=None, T=0.0):
         """
         Calculate the microcanonical rate coefficient :math:`k(E)` for the reaction
-        `reaction` at the energies `Elist` in J/mol. `reacDensStates` and 
+        `reaction` at the energies `Elist` in J/mol. `reacDensStates` and
         `prodDensStates` are the densities of states of the reactant and product
         configurations for this reaction. If the reaction is irreversible, only the
         reactant density of states is required; if the reaction is reversible, then
         both are required. This function will try to use the best method that it
         can based on the input data available:
-        
+
         * If detailed information has been provided for the transition state (i.e.
           the molecular degrees of freedom), then RRKM theory will be used.
-        
+
         * If the above is not possible but high-pressure limit kinetics
-          :math:`k_\\infty(T)` have been provided, then the inverse Laplace 
+          :math:`k_\\infty(T)` have been provided, then the inverse Laplace
           transform method will be used.
-    
+
         The density of states for the product `prodDensStates` and the temperature
         of interest `T` in K can also be provided. For isomerization and association
         reactions `prodDensStates` is required; for dissociation reactions it is
@@ -961,21 +961,21 @@ class Reaction:
         inverse Laplace transform method.
         """
         return calculateMicrocanonicalRateCoefficient(self, Elist, Jlist, reacDensStates, prodDensStates, T)
-    
+
     def isBalanced(self):
         """
         Return ``True`` if the reaction has the same number of each atom on
         each side of the reaction equation, or ``False`` if not.
         """
         from rmgpy.molecule.element import elementList
-        
+
         cython.declare(reactantElements=dict, productElements=dict, molecule=Molecule, atom=Atom, element=Element)
-        
+
         reactantElements = {}; productElements = {}
         for element in elementList:
             reactantElements[element] = 0
             productElements[element] = 0
-        
+
         for reactant in self.reactants:
             if isinstance(reactant, Species):
                 molecule = reactant.molecule[0]
@@ -983,7 +983,7 @@ class Reaction:
                 molecule = reactant
             for atom in molecule.atoms:
                 reactantElements[atom.element] += 1
-        
+
         for product in self.products:
             if isinstance(product, Species):
                 molecule = product.molecule[0]
@@ -991,19 +991,19 @@ class Reaction:
                 molecule = product
             for atom in molecule.atoms:
                 productElements[atom.element] += 1
-         
+
         for element in elementList:
             if reactantElements[element] != productElements[element]:
                 return False
-        
+
         return True
-    
+
     def generatePairs(self):
         """
         Generate the reactant-product pairs to use for this reaction when
         performing flux analysis. The exact procedure for doing so depends on
         the reaction type:
-        
+
         =================== =============== ========================================
         Reaction type       Template        Resulting pairs
         =================== =============== ========================================
@@ -1012,8 +1012,8 @@ class Reaction:
         Association         A + B -> C      (A,C), (B,C)
         Bimolecular         A + B -> C + D  (A,C), (B,D) *or* (A,D), (B,C)
         =================== =============== ========================================
-        
-        There are a number of ways of determining the correct pairing for 
+
+        There are a number of ways of determining the correct pairing for
         bimolecular reactions. Here we try a simple similarity analysis by comparing
         the number of heavy atoms (C/O/N/S at the moment). This should
         work most of the time, but a more rigorous algorithm may be needed for
@@ -1026,7 +1026,7 @@ class Reaction:
             for reactant in self.reactants:
                 for product in self.products:
                     self.pairs.append((reactant, product))
-            
+
         else:  # this is the bimolecular case
             reactants = self.reactants[:]
             products = self.products[:]
@@ -1047,7 +1047,7 @@ class Reaction:
             productIodines    = [sum([1 for atom in  product.molecule[0].atoms if atom.isIodine()]) for product  in products ]
             reactantFluorines = [sum([1 for atom in reactant.molecule[0].atoms if atom.isFluorine()]) for reactant in reactants]
             productFluorines  = [sum([1 for atom in  product.molecule[0].atoms if atom.isFluorine()]) for product  in products ]
-            
+
             # Sort the reactants and products by C/O/N/S numbers
             reactants = [(carbon, oxygen, nitrogen, silicon, sulfur, chlorine, iodine, fluorine, reactant) for carbon, oxygen, nitrogen, silicon, sulfur, chlorine, iodine, fluorine, reactant
                          in zip(reactantCarbons,reactantOxygens,reactantNitrogens,reactantSilicons,reactantSulfurs,reactantChlorines, reactantIodines, reactantFluorines, reactants)]
@@ -1055,7 +1055,7 @@ class Reaction:
             products = [(carbon, oxygen, nitrogen, silicon, sulfur, chlorine, iodine, fluorine, product) for carbon, oxygen, nitrogen, silicon, sulfur, chlorine, iodine, fluorine, product
                         in zip(productCarbons,productOxygens,productNitrogens,productSilicons,productSulfurs,productChlorines, productIodines, productFluorines, products)]
             products.sort()
-            
+
             while len(reactants) > 1 and len(products) > 1:
                 self.pairs.append((reactants[-1][-1], products[-1][-1]))
                 reactants.pop()
@@ -1063,7 +1063,7 @@ class Reaction:
             for reactant in reactants:
                 for product in products:
                     self.pairs.append((reactant[-1], product[-1]))
-    
+
     def draw(self, path):
         """
         Generate a pictorial representation of the chemical reaction using the
@@ -1076,7 +1076,7 @@ class Reaction:
         from rmgpy.molecule.draw import ReactionDrawer
         format = os.path.splitext(path)[1].lower()[1:]
         ReactionDrawer().draw(self, format, path)
-        
+
     def _repr_png_(self):
         """
         Return a png picture of the reaction, useful for ipython-qtconsole.
@@ -1087,13 +1087,13 @@ class Reaction:
         png = open(tempFileName,'rb').read()
         os.unlink(tempFileName)
         return png
-            
+
     # Build the transition state geometry
     def generate3dTS(self, reactants, products):
         """
-        Generate the 3D structure of the transition state. Called from 
+        Generate the 3D structure of the transition state. Called from
         model.generateKinetics().
-        
+
         self.reactants is a list of reactants
         self.products is a list of products
         """
@@ -1101,13 +1101,13 @@ class Reaction:
         import rdkit.Chem
         import rdkit.Chem.AllChem
         import rdkit.Geometry
-        
+
         """
         Iterate through each reactant, then iterate through its atoms to find the
         atoms involved in the reaction. If a radical is involved, can find the atom
         with radical electrons. If a more reliable method can be found, would greatly
         improve the method.
-        
+
         Repeat for the products
         """
         for i in range(0, len(reactants)):
@@ -1125,14 +1125,14 @@ class Reaction:
                         lenVec[k] = point.Distance(newPt)
                     xCoord = [None]*len(neighbor)
                     yCoord = [None]*len(neighbor)
-                    zCoord = [None]*len(neighbor) 
+                    zCoord = [None]*len(neighbor)
                     for k in range(0, len(neighbor)):
                         xCoord[k] = dirVec[k].x*lenVec[k]
                         yCoord[k] = dirVec[k].y*lenVec[k]
                         zCoord[k] = dirVec[k].z*lenVec[k]
             reactionAxis = [sum(xCoord), sum(yCoord), sum(zCoord)]
             reactants[i].reactionAxis = reactionAxis
-        
+
         for i in range(0, len(products)):
             mol = products[i].molecule[0]
             for j in range(0, mol.rdMol.GetNumAtoms()):
@@ -1148,19 +1148,19 @@ class Reaction:
                         lenVec[k] = point.Distance(newPt)
                     xCoord = [None]*len(neighbor)
                     yCoord = [None]*len(neighbor)
-                    zCoord = [None]*len(neighbor) 
+                    zCoord = [None]*len(neighbor)
                     for k in range(0, len(neighbor)):
                         xCoord[k] = dirVec[k].x*lenVec[k]
                         yCoord[k] = dirVec[k].y*lenVec[k]
                         zCoord[k] = dirVec[k].z*lenVec[k]
             reactionAxis = [sum(xCoord), sum(yCoord), sum(zCoord)]
             products[i].reactionAxis = reactionAxis
-            
+
     def copy(self):
         """
         Create a deep copy of the current reaction.
         """
-        
+
         cython.declare(other=Reaction)
 
         other = Reaction.__new__(Reaction)
@@ -1183,7 +1183,7 @@ class Reaction:
         other.allow_pdep_route = self.allow_pdep_route
         other.elementary_high_p = self.elementary_high_p
         other.comment = deepcopy(self.comment)
-        
+
         return other
 
     def ensure_species(self, reactant_resonance=False, product_resonance=False):
@@ -1392,4 +1392,3 @@ def same_species_lists(list1, list2, check_identical=False, only_check_label=Fal
         raise NotImplementedError("Can't check isomorphism of lists with {0} species/molecules".format(len(list1)))
     # nothing found
     return False
-
