@@ -42,6 +42,53 @@ corannulene and C60 by means of inexpensive theoretical procedures. Journal of P
 https://doi.org/10.1021/jp404158v
 """
 
+from __future__ import division
+
+from rmgpy.quantity import ScalarQuantity
+
+
+class ErrorCancelingSpecies:
+    """Class for target and known (benchmark) species participating in an error canceling reaction"""
+
+    def __init__(self, molecule, low_level_hf298, high_level_hf298=None):
+        """
+        :param molecule: RMG Molecule object
+        :param low_level_hf298: Tuple of (H_f(298 K), unit) evaluated using a lower level of theory (e.g. DFT)
+        :param high_level_hf298: Tuple of (H_f(298 K), unit) evaluated using a high level of theory (e.g. expt. data)
+        """
+        self.molecule = molecule
+        self.low_level_hf298 = ScalarQuantity(*low_level_hf298)
+
+        # If the species is a benchmark species, then the high level data is already known
+        if high_level_hf298:
+            self.high_level_hf298 = ScalarQuantity(*high_level_hf298)
+
+
+class ErrorCancelingReaction:
+    """Class for representing an error canceling reaction, with the target species being an implicit reactant"""
+
+    def __init__(self, target, species=None):
+        """
+        :param target: Species for which the user wants to estimate the high level H_f(298 K) (ErrorCancelingSpecies)
+        :param species: {benchmark species (ErrorCancelingSpecies object): stoichiometric coefficient}
+        """
+
+        self.target = target
+
+        # Does not include the target, which is handled separately.
+        self.species = species or {}
+
+    def calculate_target_thermo(self):
+        """
+        Estimate the high level thermochemistry for the target species using the error canceling scheme
+        :return:
+        """
+        low_level_h_rxn = sum(map(lambda spec, v: spec.low_level_hf298.value_si*v, self.species)) - \
+            self.target.low_level_hf298.value_si
+
+        target_thermo = sum(map(lambda spec, v: spec.high_level_hf298.value_si*v, self.species)) - low_level_h_rxn
+        return ScalarQuantity(target_thermo, 'J/mol')
+
 
 if __name__ == '__main__':
     pass
