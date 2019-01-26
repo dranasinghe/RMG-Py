@@ -44,3 +44,5 @@ dependencies:
   - mpmath
   - dde
   - pyyaml
+  - pyomo
+  - coincbc

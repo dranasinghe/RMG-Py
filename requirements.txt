@@ -14,6 +14,8 @@ xlwt
 MarkupSafe # this makes Jinja2 faster
 Jinja2 # this is for rendering the HTML output files
 cairocffi
+pyomo # For MILP problems such as Clar structure generation and automatic generation of error canceling reactions
+coincbc # MILP solver
 
 # For postprocessing the profiling data
 argparse
