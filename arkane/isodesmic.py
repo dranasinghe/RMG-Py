@@ -44,6 +44,8 @@ https://doi.org/10.1021/jp404158v
 
 from __future__ import division
 
+import numpy as np
+
 from rmgpy.quantity import ScalarQuantity
 
 
@@ -88,6 +90,69 @@ class ErrorCancelingReaction:
 
         target_thermo = sum(map(lambda spec, v: spec.high_level_hf298.value_si*v, self.species)) - low_level_h_rxn
         return ScalarQuantity(target_thermo, 'J/mol')
+
+
+class ConstraintMap:
+    """A dictionary object that adds new keys to the dictionary with an incremented index as its value"""
+    def __init__(self):
+        self.mapping = {}
+
+    def __setitem__(self, key, value):
+        return self.mapping.__setitem__(key, value)
+
+    def __getitem__(self, item):
+        try:
+            return self.mapping.__getitem__(item)
+        except KeyError:
+            self.mapping[item] = len(self.mapping)
+            return self.mapping.__getitem__(item)
+
+    def __len__(self):
+        return len(self.mapping)
+
+
+class SpeciesConstraints:
+    """A class for defining and enumerating constraints to BenchmarkSpecies objects for error canceling reactions"""
+    def __init__(self, allowed_atom_types, conserve_bonds=True, conserve_ring_size=True, ):
+        """
+        Define the constraints that will be enforced, and determine the mapping of indices in the constraint vector to
+        individual constraints
+
+        :param conserve_bonds: Enforce that the number of each bond type be conserved (boolean)
+        :param conserve_ring_size: Enforce that the number of each ring size be conserved (boolean)
+        :param allowed_atom_types: A list containing the atom types that occur in the target molecule (list)
+        """
+
+        self.conserve_bonds = conserve_bonds
+        self.conserve_ring_size = conserve_ring_size
+        self.allowed_atom_types = allowed_atom_types
+        self.constraint_map = ConstraintMap()
+        self.max_num_constraints = 3*(len(allowed_atom_types)**2)+10  # bond type constraints grow as N^2 at most
+
+    def enumerate(self, molecule):
+        """
+        Determine the constraint vector for a species given the enforced constraints
+        :param molecule: RMG Molecule object
+        :return: constraint vector (np array)
+        """
+        constraint_vector = np.zeros(self.max_num_constraints)
+
+        atoms = molecule.get_element_count()
+        for atom_label, count in atoms.iteritems():
+            constraint_vector[self.constraint_map[atom_label]] += count
+
+        if self.conserve_bonds:
+            bonds = molecule.enumerate_bonds()
+            for bond_label, count in bonds.iteritems():
+                constraint_vector[self.constraint_map[bond_label]] += count
+
+        if self.conserve_ring_size:
+            rings = molecule.getSmallestSetOfSmallestRings()
+            if len(rings) > 0:
+                for ring in rings:
+                    constraint_vector[self.constraint_map['{0}_ring'.format(len(ring))]] += 1
+
+        return constraint_vector
 
 
 if __name__ == '__main__':
