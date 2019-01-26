@@ -155,5 +155,62 @@ class SpeciesConstraints:
         return constraint_vector
 
 
+class ErrorCancelingScheme(object):
+    """A Base class for calculating target species thermochemisty using error canceling reactions"""
+
+    def __init__(self, target, benchmark_set):
+        """
+
+        :param target: RMG molecule object for which H_f(298 K) will be calculated
+        :param benchmark_set: List of benchmark species (ErrorCancelingSpecies objects) with well known and verified
+                              high level thermochemistry
+        """
+
+        self.target = target
+        allowed_elements = target.molecule.get_element_count().keys()
+        self.constraints = SpeciesConstraints(allowed_elements)
+
+        # Prune out species with non-allowable atom types
+        self.benchmark_set = []
+        for species in benchmark_set:
+            elements = species.molecule.get_element_count().keys()
+            for label in elements:
+                if label not in allowed_elements:
+                    break
+            else:
+                self.benchmark_set.append(species)
+
+        self.target_constraint = None
+        self.constraint_matrix = None
+
+    def initialize(self):
+        """Setup the remaining scheme attributes before running"""
+        # Pre-compute the constraints for all species
+        self.target_constraint,  self.constraint_matrix = self.calculate_constraints()
+
+    def calculate_constraints(self):
+        """Enumerate the constraints for the target and benchmark species"""
+        target_constraints = self.constraints.enumerate(self.target.molecule)
+        c_matrix = np.zeros((len(self.benchmark_set), self.constraints.max_num_constraints), dtype=int)
+        for i, species in enumerate(self.benchmark_set):
+            constraint_vector = self.constraints.enumerate(species.molecule)
+            c_matrix[i, :] = constraint_vector
+
+        cutoff_index = len(self.constraints.constraint_map)  # All columns past this index are all zeros and undefined
+
+        c_matrix = c_matrix[:, :cutoff_index]
+        target_constraints = target_constraints[:cutoff_index]
+
+        return target_constraints, c_matrix
+
+
+class IsodesmicScheme(ErrorCancelingScheme):
+    """An error canceling reaction where the number and type of both atoms and bonds are conserved"""
+    def __init__(self, target, benchmark_set):
+        super(IsodesmicScheme, self).__init__(target, benchmark_set)
+        self.constraints.conserve_bonds = True
+        self.initialize()
+
+
 if __name__ == '__main__':
     pass
