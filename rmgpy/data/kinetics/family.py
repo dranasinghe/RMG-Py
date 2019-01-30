@@ -2926,11 +2926,12 @@ class KineticsFamily(Database):
                         elif typr == 'bondExt':
                             atms = grp2.atoms
                             bd = grp2.getBond(atms[indcr[0]],atms[indcr[1]])
-                            bd.reg_dim = list(regVal)
+                            bd.reg_dim = [list(set(bd.order) & set(regVal[0])),list(set(bd.order) & set(regVal[1]))]
                             if grpc:
                                 atms = grpc.atoms
-                                bd = grp2.getBond(atms[indcr[0]],atms[indcr[1]])
-                                bd.reg_dim = list(regVal)
+                                bd = grpc.getBond(atms[indcr[0]],atms[indcr[1]])
+                                bd.reg_dim = [list(set(bd.order) & set(regVal[0])),list(set(bd.order) & set(regVal[1]))]
+
 
             #extensions being expanded
             for typr,indcr in regDict.keys(): #have to label the regularization dimensions in all relevant groups
@@ -2953,11 +2954,11 @@ class KineticsFamily(Database):
                         elif typr == 'bondExt':
                             atms = grp2.atoms
                             bd = grp2.getBond(atms[indcr[0]],atms[indcr[1]])
-                            bd.reg_dim = list(regVal)
+                            bd.reg_dim = [list(set(bd.order) & set(regVal[0])),list(set(bd.order) & set(regVal[1]))]
                             if grpc:
                                 atms = grpc.atoms
-                                bd = grp2.getBond(atms[indcr[0]],atms[indcr[1]])
-                                bd.reg_dim = list(regVal)
+                                bd = grpc.getBond(atms[indcr[0]],atms[indcr[1]])
+                                bd.reg_dim = [list(set(bd.order) & set(regVal[0])),list(set(bd.order) & set(regVal[1]))]
 
             outExts.append([])
             grps.pop()
@@ -3624,6 +3625,7 @@ class KineticsFamily(Database):
                         for atm in p.molecule[0].atoms:
                             if atm.label in rkeys:
                                 atm.label = reverseMap[atm.label]
+
 
                         prods.append(Species(molecule=[p.molecule[0]]))
 
