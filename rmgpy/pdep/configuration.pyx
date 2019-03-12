@@ -105,7 +105,14 @@ cdef class Configuration:
         or product channel, or ``False`` otherwise.
         """
         return len(self.species) == 2
-    
+
+    cpdef bint isTermolecular(self) except -2:
+        """
+        Return ``True`` if the configuration represents a bimolecular reactant
+        or product channel, or ``False`` otherwise.
+        """
+        return len(self.species) == 3
+
     cpdef bint isTransitionState(self) except -2:
         """
         Return ``True`` if the configuration represents a transition state,
@@ -278,7 +285,26 @@ cdef class Configuration:
                 assert len(mass) == 2
                 mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
                 modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
-                
+            elif self.isTermolecular():
+                mass = []
+                for species in self.species:
+                    for mode in species.conformer.modes:
+                        if isinstance(mode, IdealGasTranslation):
+                            mass.append(mode.mass.value_si)
+                            break
+                    else:
+                        if species.molecularWeight is not None:
+                            mass.append(species.molecularWeight.value_si)
+                        else:
+                            m = 0
+                            for atom in species.molecule[0].atoms:
+                                m += atom.element.mass
+                            mass.append(m * constants.amu * 1000)
+                assert len(mass) == 3
+                mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
+                modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
+                mu2 = 1.0/(1.0/mass[0] + 1.0/mass[2])
+                modes.insert(0, IdealGasTranslation(mass=(mu2/constants.amu,"amu")))
             if rmgmode:
                 # Compute the density of states by direct count
                 # This is currently faster than the method of steepest descents,
