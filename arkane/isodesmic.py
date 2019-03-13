@@ -90,10 +90,11 @@ class ErrorCancelingReaction:
         Estimate the high level thermochemistry for the target species using the error canceling scheme
         :return:
         """
-        low_level_h_rxn = sum(map(lambda spec, v: spec.low_level_hf298.value_si*v, self.species)) - \
+        low_level_h_rxn = sum(map(lambda spec: spec[0].low_level_hf298.value_si*spec[1], self.species.items())) - \
             self.target.low_level_hf298.value_si
 
-        target_thermo = sum(map(lambda spec, v: spec.high_level_hf298.value_si*v, self.species)) - low_level_h_rxn
+        target_thermo = sum(map(lambda spec: spec[0].high_level_hf298.value_si*spec[1], self.species.items())) - \
+            low_level_h_rxn
         return ScalarQuantity(target_thermo, 'J/mol')
 
 
