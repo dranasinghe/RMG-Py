@@ -44,6 +44,7 @@ https://doi.org/10.1021/jp404158v
 
 from __future__ import division
 
+import os
 import signal
 from collections import deque
 from cPickle import load
@@ -52,8 +53,10 @@ from lpsolve55 import lpsolve, EQ, LE
 import numpy as np
 import pyomo.environ as pyo
 
+from arkane.benchmark import BenchmarkEntry
 from rmgpy.molecule import Molecule
 from rmgpy.quantity import ScalarQuantity
+from rmgpy import settings
 
 
 class ErrorCancelingSpecies:
@@ -166,7 +169,7 @@ class SpeciesConstraints:
 class ErrorCancelingScheme(object):
     """A Base class for calculating target species thermochemisty using error canceling reactions"""
 
-    def __init__(self, target, benchmark_set):
+    def __init__(self, target, model_chemistry=None, benchmark_set=None):
         """
 
         :param target: RMG molecule object for which H_f(298 K) will be calculated
@@ -177,6 +180,10 @@ class ErrorCancelingScheme(object):
         self.target = target
         allowed_elements = target.molecule.get_element_count().keys()
         self.constraints = SpeciesConstraints(allowed_elements)
+
+        # Load the default benchamark database if one is not provided
+        if benchmark_set is None:
+            benchmark_set = load_benchmark_database(model_chemistry)
 
         # Prune out species with non-allowable atom types
         self.benchmark_set = []
@@ -340,10 +347,32 @@ class ErrorCancelingScheme(object):
 
 class IsodesmicScheme(ErrorCancelingScheme):
     """An error canceling reaction where the number and type of both atoms and bonds are conserved"""
-    def __init__(self, target, benchmark_set=None):
-        super(IsodesmicScheme, self).__init__(target, benchmark_set)
+    def __init__(self, target, model_chemistry=None, benchmark_set=None):
+        super(IsodesmicScheme, self).__init__(target, model_chemistry, benchmark_set)
         self.constraints.conserve_bonds = True
         self.initialize()
+
+
+def load_benchmark_database(model_chemistry):
+    benchmark_species = []
+
+    db_path = os.path.join(settings['database.directory'], 'benchmark_sets', 'Species')
+    indices = os.listdir(db_path)
+
+    for i in indices:
+        path = os.path.join(db_path, i, '{0}.yaml'.format(i))
+        entry = BenchmarkEntry()
+        entry.load_from_yaml(path)
+
+        if entry.dft_thermo[model_chemistry] is None:
+            continue
+        else:
+            molecule = Molecule().fromSMILES(entry.smiles)
+            low_level = (entry.dft_thermo[model_chemistry].getEnthalpy(298), 'J/mol')
+            high_level = (entry.preferred_expt_source['hf298'], entry.preferred_expt_source['units'])
+            benchmark_species.append(ErrorCancelingSpecies(molecule, low_level, high_level))
+
+    return benchmark_species
 
 
 if __name__ == '__main__':

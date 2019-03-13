@@ -571,7 +571,8 @@ class StatMechJob(object):
             self.species.thermo = None
 
             scheme = IsodesmicScheme(target=ErrorCancelingSpecies(Molecule().fromSMILES(self.smiles_string),
-                                                                  (uncorrected_thermo, 'J/mol')))
+                                                                  (uncorrected_thermo, 'J/mol')),
+                                     model_chemistry=self.modelChemistry)
             isodesmic_thermo = scheme.calculate_target_enthalpy()
 
             # Set the difference as the isodesmic EO correction and re-run the statmech job
