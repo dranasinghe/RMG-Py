@@ -45,6 +45,7 @@ https://doi.org/10.1021/jp404158v
 from __future__ import division
 
 import signal
+from collections import deque
 
 from lpsolve55 import lpsolve, EQ, LE
 import numpy as np
@@ -207,7 +208,7 @@ class ErrorCancelingScheme(object):
 
         return target_constraints, c_matrix
 
-    def find_error_canceling_reaction(self, benchmark_subset, milp_software='pyomo'):
+    def find_error_canceling_reaction(self, benchmark_subset, milp_software='lpsolve'):
         """
         Automatically find a valid error canceling reaction given a subset of the available benchmark species. This
         is done by solving a mixed integer linear programming (MILP) problem similiar to Buerger et al. See the Arkane
@@ -275,7 +276,7 @@ class ErrorCancelingScheme(object):
                         targets[j])
 
             lpsolve('add_constraint', lp, np.ones(m), LE, 20)  # Use at most 20 species (including replicates)
-            lpsolve('set_timeout', lp, 5)  # Move on if lpsolve can't find a solution quickly
+            lpsolve('set_timeout', lp, 1)  # Move on if lpsolve can't find a solution quickly
 
             # Constrain v_i to be 4 or less
             for i in range(m):
@@ -287,20 +288,42 @@ class ErrorCancelingScheme(object):
             status = lpsolve('solve', lp)
 
             if status != 0:
-                return None
+                return None, None
 
             else:
                 _, solution = lpsolve('get_solution', lp)[:2]
 
         reaction = ErrorCancelingReaction(self.target)
+        subset_indices = []
         for index, v in enumerate(solution):
             if v > 0:
+                subset_indices.append(index % split)
                 if index < split:
                     reaction.species.update({self.benchmark_set[benchmark_subset[index]]: -v})
                 else:
                     reaction.species.update({self.benchmark_set[benchmark_subset[index % split]]: v})
 
-        return reaction
+        return reaction, np.array(subset_indices)
+
+    def multiple_error_canceling_reaction_search(self, n_reactions_max=20, milp_software='lpsolve'):
+        subset_queue = deque()
+        subset_queue.append(np.arange(0, len(self.benchmark_set)))
+        reaction_list = []
+
+        while (len(subset_queue) != 0) and (len(reaction_list) < n_reactions_max):
+            subset = subset_queue.popleft()
+            if len(subset) == 0:
+                continue
+            reaction, subset_indices = self.find_error_canceling_reaction(subset, milp_software=milp_software)
+            if reaction is None:
+                continue
+            else:
+                reaction_list.append(reaction)
+
+                for index in subset_indices:
+                    subset_queue.append(np.delete(subset, index))
+
+        return reaction_list
 
 
 class IsodesmicScheme(ErrorCancelingScheme):
