@@ -46,11 +46,13 @@ from __future__ import division
 
 import signal
 from collections import deque
+from cPickle import load
 
 from lpsolve55 import lpsolve, EQ, LE
 import numpy as np
 import pyomo.environ as pyo
 
+from rmgpy.molecule import Molecule
 from rmgpy.quantity import ScalarQuantity
 
 
@@ -326,10 +328,19 @@ class ErrorCancelingScheme(object):
 
         return reaction_list
 
+    def calculate_target_enthalpy(self, n_reactions_max=20, milp_software='lpsolve'):
+        reaction_list = self.multiple_error_canceling_reaction_search(n_reactions_max, milp_software)
+        h298_list = np.zeros(len(reaction_list))
+
+        for i, rxn in enumerate(reaction_list):
+            h298_list[i] = rxn.calculate_target_thermo().value_si
+
+        return ScalarQuantity(np.median(h298_list), 'J/mol')
+
 
 class IsodesmicScheme(ErrorCancelingScheme):
     """An error canceling reaction where the number and type of both atoms and bonds are conserved"""
-    def __init__(self, target, benchmark_set):
+    def __init__(self, target, benchmark_set=None):
         super(IsodesmicScheme, self).__init__(target, benchmark_set)
         self.constraints.conserve_bonds = True
         self.initialize()

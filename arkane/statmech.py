@@ -58,6 +58,8 @@ from arkane.molpro import MolproLog
 from arkane.qchem import QChemLog
 from arkane.common import symbol_by_number
 from arkane.common import ArkaneSpecies
+from arkane.isodesmic import IsodesmicScheme, ErrorCancelingSpecies
+from arkane.thermo import ThermoJob
 
 ################################################################################
 
@@ -172,12 +174,15 @@ class StatMechJob(object):
         self.modelChemistry = ''
         self.frequencyScaleFactor = 1.0
         self.includeHinderedRotors = True
+        self.useIsodesmicReactions = False
+        self.isodesmicCorrection = None
         self.applyAtomEnergyCorrections = True
         self.applyBondEnergyCorrections = True
         self.atomEnergies = None
         self.supporting_info = [self.species.label]
         self.bonds = None
         self.arkane_species = ArkaneSpecies(species=species)
+        self.smiles_string = None
 
     def execute(self, outputFile=None, plot=False, pdep=False):
         """
@@ -405,7 +410,7 @@ class StatMechJob(object):
                 E0 = energyLog.loadEnergy(self.frequencyScaleFactor)
             else:
                 E0 = E0 * constants.E_h * constants.Na         # Hartree/particle to J/mol
-            if not self.applyAtomEnergyCorrections:
+            if (not self.applyAtomEnergyCorrections) and (not self.useIsodesmicReactions):
                 logging.warning('Atom corrections are not being used. Do not trust energies and thermo.')
             E0 = applyEnergyCorrections(E0,
                                         self.modelChemistry,
@@ -413,7 +418,10 @@ class StatMechJob(object):
                                         self.bonds,
                                         atomEnergies=self.atomEnergies,
                                         applyAtomEnergyCorrections=self.applyAtomEnergyCorrections,
-                                        applyBondEnergyCorrections=self.applyBondEnergyCorrections)
+                                        applyBondEnergyCorrections=self.applyBondEnergyCorrections,
+                                        useIsodesmicReactions=self.useIsodesmicReactions,
+                                        isodesmicCorrection=self.isodesmicCorrection,
+                                        )
             if len(number) > 1:
                 ZPE = statmechLog.loadZeroPointEnergy() * self.frequencyScaleFactor
             else:
@@ -553,6 +561,24 @@ class StatMechJob(object):
 
         self.species.conformer = conformer
 
+        if self.useIsodesmicReactions and (self.isodesmicCorrection is None):
+            uncorrected_thermo_job = ThermoJob(species=self.species, thermoClass='nasa')
+            uncorrected_thermo_job.generateThermo()
+
+            uncorrected_thermo = self.species.thermo.getEnthalpy(298)
+
+            # Set the species thermo to None so that it re-generates the second time through
+            self.species.thermo = None
+
+            scheme = IsodesmicScheme(target=ErrorCancelingSpecies(Molecule().fromSMILES(self.smiles_string),
+                                                                  (uncorrected_thermo, 'J/mol')))
+            isodesmic_thermo = scheme.calculate_target_enthalpy()
+
+            # Set the difference as the isodesmic EO correction and re-run the statmech job
+            self.isodesmicCorrection = isodesmic_thermo.value_si - uncorrected_thermo
+            self.load(pdep)
+            return
+
     def save(self, outputFile):
         """
         Save the results of the statistical mechanics job to the file located
@@ -629,7 +655,8 @@ class StatMechJob(object):
 
 
 def applyEnergyCorrections(E0, modelChemistry, atoms, bonds,
-                           atomEnergies=None, applyAtomEnergyCorrections=True, applyBondEnergyCorrections=False):
+                           atomEnergies=None, applyAtomEnergyCorrections=True, applyBondEnergyCorrections=False,
+                           useIsodesmicReactions=False, isodesmicCorrection=None):
     """
     Given an energy `E0` in J/mol as read from the output of a quantum chemistry
     calculation at a given `modelChemistry`, adjust the energy such that it
@@ -644,6 +671,12 @@ def applyEnergyCorrections(E0, modelChemistry, atoms, bonds,
     `bonds` is a dictionary associating bond types with the number
     of that bond in the molecule.
     """
+
+    if useIsodesmicReactions:
+        if isodesmicCorrection:
+            return E0+isodesmicCorrection
+        else:
+            return E0
 
     if applyAtomEnergyCorrections:
         # Spin orbit correction (SOC) in Hartrees

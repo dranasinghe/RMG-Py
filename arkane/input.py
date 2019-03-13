@@ -632,7 +632,9 @@ def loadInputFile(path):
     use_hindered_rotors = local_context.get('useHinderedRotors', True)
     use_atom_corrections = local_context.get('useAtomCorrections', True)
     use_bond_corrections = local_context.get('useBondCorrections', False)
+    use_isodesmic_reactions = local_context.get('useIsodesmicReactions', False)
     atom_energies = local_context.get('atomEnergies', None)
+    smiles_string = local_context.get('smilesString', None)
     
     directory = os.path.dirname(path)
     
@@ -648,6 +650,8 @@ def loadInputFile(path):
             job.applyAtomEnergyCorrections = use_atom_corrections
             job.applyBondEnergyCorrections = use_bond_corrections
             job.atomEnergies = atom_energies
+            job.useIsodesmicReactions = use_isodesmic_reactions
+            job.smiles_string = smiles_string
         if isinstance(job, ThermoJob):
             job.arkane_species.author = author
             job.arkane_species.level_of_theory = level_of_theory
