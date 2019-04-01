@@ -154,7 +154,7 @@ def react_all(core_spc_list, numOldCoreSpecies, unimolecularReact, bimolecularRe
 
     if maxproc == 1:
         # React all families like normal (provide empty argument for only_families)
-        spc_tuples = zip(spc_tuples)
+        spc_fam_tuples = zip(spc_tuples)
     else:
         # Identify and split families that are prone to generate many reactions into sublists.
         family_list = getDB('kinetics').families.keys()
@@ -177,12 +177,13 @@ def react_all(core_spc_list, numOldCoreSpecies, unimolecularReact, bimolecularRe
 
         # Only employ family splitting for reactants that have a larger number than min_atoms
         min_atoms = 10
-
+        spc_fam_tuples = []
         for i, spc_tuple in enumerate(spc_tuples):
             if any([len(spc.molecule[0].atoms) > min_atoms for spc in spc_tuple]):
-                spc_tuples[i] = (spc_tuple, split_list)
+                for item in split_list:
+                    spc_fam_tuples.append((spc_tuple, item))
             else:
-                spc_tuples[i] = (spc_tuple,)
+                spc_fam_tuples.append((spc_tuple,))
 
-    return list(react(*spc_tuples))
+    return list(react(*spc_fam_tuples))
 
