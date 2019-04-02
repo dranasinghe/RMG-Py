@@ -2,6 +2,7 @@ name: rmg_env
 channels:
   - defaults
   - rmg
+  - conda-forge
 dependencies:
   - libgcc # [unix]
   - python
