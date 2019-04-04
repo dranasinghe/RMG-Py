@@ -1121,6 +1121,32 @@ class KineticsFamily(Database):
             # trainingSet=True used later to does not allow species to match a liquid phase library and get corrected thermo which will affect reverse rate calculation
             item = Reaction(reactants=[Species(molecule=[m.molecule[0].copy(deep=True)], label=m.label) for m in entry.item.reactants],
                              products=[Species(molecule=[m.molecule[0].copy(deep=True)], label=m.label) for m in entry.item.products])
+
+            # Determine number of parallel processes.
+            from rmgpy.rmg.react import determine_procnum_from_RAM
+            procnum = determine_procnum_from_RAM() 
+
+            if procnum > 1:
+                # If QMTP and multiprocessing write QMTP files here in parallel.
+                QMTP_list = []
+                QMTP_list.extend(item.reactants)
+                QMTP_list.extend(item.products)
+                if QMTP_list:
+                    from rmgpy.rmg.input import getInput
+                    quantumMechanics = getInput('quantumMechanics')
+                    if quantumMechanics:
+                        # Generate unique species list to avoid race conditions when writing the QMTP files in parallel.
+                        for i, spc_QMTP in enumerate(QMTP_list):
+                            if spc_QMTP:
+                                spc_QMTP.generate_resonance_structures()
+                                for j in range(i+1, len(QMTP_list)):
+                                    spc2_QMTP = QMTP_list[j]
+                                    if spc2_QMTP and spc_QMTP.isIsomorphic(spc2_QMTP):
+                                        QMTP_list[j] = []
+                        QMTP_list = filter(None, QMTP_list)
+                        from rmgpy.rmg.model import generate_QMfiles 
+                        generate_QMfiles(QMTP_list, quantumMechanics, procnum)
+    
             for reactant in item.reactants:
                 reactant.generate_resonance_structures()
                 reactant.thermo = thermoDatabase.getThermoData(reactant, trainingSet=True)

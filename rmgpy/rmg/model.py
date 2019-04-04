@@ -69,31 +69,64 @@ from pdep import PDepReaction, PDepNetwork
 
 ################################################################################
 
-def calculate_thermo_parallel(spc):
+def generate_QMfiles(spcs, quantumMechanics, procnum):
     """
-    If quantumMechanics is turned on in the input file species thermo data is calculated 
-    in this function.
+    If quantumMechanics is turned on in the input file the QM files are written here in parallel.
+    Later, thermo is calculated for one species at a time in self.processNewReactions() by looking up the
+    values in the QM files.
     """
+    # Generating a list of molecules. 
+    mol_list = []
+    for spc in spcs:
+        if spc.molecule[0].getRadicalCount() > quantumMechanics.settings.maxRadicalNumber:
+            for molecule in spc.molecule:
+                if quantumMechanics.settings.onlyCyclics and molecule.isCyclic():
+                    mol_list.append(molecule)
+        else:
+            if quantumMechanics.settings.onlyCyclics and spc.molecule[0].isCyclic():
+                mol_list.append(spc.molecule[0])
 
-    from rmgpy.rmg.input import getInput
+    if mol_list:
+        # Generate a unique molecule list to avoid race conditions when writing the QMTP files in parallel.
+        for i, mol_QMTP in enumerate(mol_list):
+            if mol_QMTP:
+                for j in range(i+1, len(mol_list)):
+                    mol2_QMTP = mol_list[j]
+                    if mol2_QMTP and mol_QMTP.isIsomorphic(mol2_QMTP):
+                        mol_list[j] = []
+        mol_list = filter(None, mol_list)
+    
+        # Zip arguments for use in map.
+        mol_list_arg = []
+        for mol in mol_list:
+            mol_list_arg.append((mol, quantumMechanics)) 
+    
+        if mol_list_arg:
+        
+            # Execute multiprocessing map. It blocks until the result is ready.
+            # This method chops the iterable into a number of chunks which it
+            # submits to the process pool as separate tasks.
+            if procnum == 1:
+                logging.info('Writing QM files with {0} process.'.format(procnum))
+                map(_write_QMfiles_star, mol_list_arg)
+            else:
+                logging.info('Writing QM files with {0} processes.'.format(procnum))
+                p = Pool(processes=procnum)
+                p.map(_write_QMfiles_star, mol_list_arg)
+                p.close()
+                p.join()
 
-    try:
-        quantumMechanics = getInput('quantumMechanics')
-    except Exception:
-        logging.debug('Quantum Mechanics DB could not be found.')
-        quantumMechanics = None
+def _write_QMfiles_star(args):
+	    """Wrapper to unpack zipped arguments for use with map"""
+	    return write_QMfiles(*args)
 
-    spc.generate_resonance_structures()
-    original_molecule = spc.molecule[0]
-
-    if quantumMechanics.settings.onlyCyclics and not original_molecule.isCyclic():
-        pass
-    else: 
-        if original_molecule.getRadicalCount() > quantumMechanics.settings.maxRadicalNumber:
-            pass
-        else: 
-            logging.info('Not too many radicals: do a direct QM calculation.')
-            thermo0 = quantumMechanics.getThermoData(original_molecule) # returns None if it fails
+def write_QMfiles(mol, quantumMechanics):
+    """
+    If quantumMechanics is turned on in the input file the QM files are written here in parallel. 
+    Later, thermo is calculated for one species at a time in self.processNewReactions() by looking up the
+    values in the QM files.
+    """
+    quantumMechanics.getThermoData(mol)
 
 class ReactionModel:
     """
@@ -695,48 +728,32 @@ class CoreEdgeReactionModel:
                              unimolecularReact, bimolecularReact, trimolecularReact=trimolecularReact)
 
             # Get new species and save in spcs
-            spcs_tmp = []
+            spcs = []
+            spcs_list = []
             for rxn in rxns:
-                spcs_tmp.extend(rxn.reactants)
-                spcs_tmp.extend(rxn.products)
-                
-            spcs = spcs_tmp
+                spcs.extend(rxn.reactants)
+                spcs.extend(rxn.products)
+                spcs_list.extend(rxn.reactants)
+                spcs_list.extend(rxn.products)
 
-            from rmgpy.rmg.input import getInput
-            try:
+            # Determine number of parallel processes.
+            procnum = determine_procnum_from_RAM()
+
+            if spcs_list and procnum > 1:
+                from rmgpy.rmg.input import getInput
                 quantumMechanics = getInput('quantumMechanics')
-            except Exception:
-                logging.debug('Quantum Mechanics DB could not be found.')
-                quantumMechanics = None
-        
-            if not quantumMechanics:
-                pass
-            else:
-                if not spcs_tmp:
-                    spcs = spcs_tmp
-                else:
-                    # Generate unique list of species to be submitted to QM thermo calculation
-                    # intilize list 
-                    spcs=[spcs_tmp[0]]
-                    for counter, spc in enumerate (spcs_tmp):
-                        for counter2, val in enumerate (spcs):
-                            if (spc.molecule[0].toSMILES() != val.molecule[0].toSMILES()):
-                                appendReactant = True
-                            else:
-                                appendReactant = False
-                                break
-                        if appendReactant:
-                            spcs.append(spc)
-    
-                    procnum = determine_procnum_from_RAM()
-
-                    # Execute multiprocessing map. It blocks until the result is ready.
-                    # This method chops the iterable into a number of chunks which it
-                    # submits to the process pool as separate tasks.
-                    p = Pool(processes=procnum)
-                    p.map(calculate_thermo_parallel,spcs)
-                    p.close()
-                    p.join()
+                if quantumMechanics:
+                    # Generate unique species list to avoid race conditions when writing the QMTP files in parallel.
+                    for i, spc_QMTP in enumerate(spcs_list):
+                        if spc_QMTP:
+                            spc_QMTP.generate_resonance_structures()      
+                            for j in range(i+1, len(spcs_list)):
+                                spc2_QMTP = spcs_list[j]
+                                if spc2_QMTP and spc_QMTP.isIsomorphic(spc2_QMTP):
+                                    spcs_list[j] = []
+                    spcs_list = filter(None, spcs_list)
+                    from rmgpy.rmg.model import generate_QMfiles
+                    generate_QMfiles(spcs_list, quantumMechanics, procnum)
 
             ensure_independent_atom_ids(spcs, resonance=True)
 
