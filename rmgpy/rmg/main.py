@@ -590,13 +590,14 @@ class RMG(util.Subject):
                 reactionSystem.attach(SimulationProfilePlotter(
                     self.outputDirectory, index, self.reactionModel.core.species))  
 
-    def execute(self, **kwargs):
+    def execute(self, initialize=True, **kwargs):
         """
         Execute an RMG job using the command-line arguments `args` as returned
         by the :mod:`argparse` package.
+        `initialize` is a ``bool`` flag to determine whether self.initialize() is called
         """
-    
-        self.initialize(**kwargs)
+        if initialize:
+            self.initialize(**kwargs)
 
         # register listeners
         self.register_listeners()
@@ -981,13 +982,11 @@ class RMG(util.Subject):
 
         # Check all core reactions (in both directions) for collision limit violation
         violators = []
-        num_rxn_violators = 0
         for rxn in self.reactionModel.core.reactions:
             violator_list = rxn.check_collision_limit_violation(t_min=self.Tmin, t_max=self.Tmax,
                                                                 p_min=self.Pmin, p_max=self.Pmax)
             if violator_list:
                 violators.extend(violator_list)
-                num_rxn_violators += 1
         # Whether or not violators were found, rename 'collision_rate_violators.log' if it exists
         new_file = os.path.join(self.outputDirectory, 'collision_rate_violators.log')
         old_file = os.path.join(self.outputDirectory, 'collision_rate_violators_OLD.log')
@@ -1000,22 +999,23 @@ class RMG(util.Subject):
         if violators:
             logging.info("\n")
             logging.warning("{0} CORE reactions violate the collision rate limit!"
-                            "\nSee the 'collision_rate_violators.log' for details.\n\n".format(num_rxn_violators))
+                            "\nSee the 'collision_rate_violators.log' for details.\n\n".format(len(violators)))
             with open(new_file, 'w') as violators_f:
                 violators_f.write('*** Collision rate limit violators report ***\n'
                                   '"Violation factor" is the ratio of the rate coefficient to the collision limit'
                                   ' rate at the relevant conditions\n\n')
                 for violator in violators:
-                    rxn_string = str(violator[0])
-                    kinetics = violator[0].kinetics
+                    rxn_string = violator[0].toChemkin()
+                    # kinetics = violator[0].kinetics
+                    kinetics = ''
                     comment=''
-                    if isinstance(violator[0], TemplateReaction):
-                        comment = violator[0].kinetics.comment
-                        violator[0].kinetics.comment = ''  # the comment is printed better when outside of the object
-                    if isinstance(violator[0], LibraryReaction):
-                        comment = 'Kinetic library: {0}'.format(violator[0].library)
-                    if isinstance(violator[0], PDepReaction):
-                        comment = 'Network #{0}'.format(violator[0].network)
+                    # if isinstance(violator[0], TemplateReaction):
+                    #     comment = violator[0].kinetics.comment
+                    #     violator[0].kinetics.comment = ''  # the comment is printed better when outside of the object
+                    # if isinstance(violator[0], LibraryReaction):
+                    #     comment = 'Kinetic library: {0}'.format(violator[0].library)
+                    # if isinstance(violator[0], PDepReaction):
+                    #     comment = 'Network #{0}'.format(violator[0].network)
                     direction = violator[1]
                     ratio = violator[2]
                     condition = violator[3]
