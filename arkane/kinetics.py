@@ -159,12 +159,14 @@ class KineticsJob(object):
         
         tunneling = self.reaction.transitionState.tunneling
         if isinstance(tunneling, Wigner) and tunneling.frequency is None:
-            tunneling.frequency = (self.reaction.transitionState.frequency.value_si,"cm^-1")
+            tunneling.frequency = (self.reaction.transitionState.frequency.value_si, "cm^-1")
         elif isinstance(tunneling, Eckart) and tunneling.frequency is None:
-            tunneling.frequency = (self.reaction.transitionState.frequency.value_si,"cm^-1")
-            tunneling.E0_reac = (sum([reactant.conformer.E0.value_si for reactant in self.reaction.reactants])*0.001,"kJ/mol")
-            tunneling.E0_TS = (self.reaction.transitionState.conformer.E0.value_si*0.001,"kJ/mol")
-            tunneling.E0_prod = (sum([product.conformer.E0.value_si for product in self.reaction.products])*0.001,"kJ/mol")
+            tunneling.frequency = (self.reaction.transitionState.frequency.value_si, "cm^-1")
+            tunneling.E0_reac = (sum([reactant.conformer.E0.value_si for reactant in self.reaction.reactants])
+                                 * 0.001, "kJ/mol")
+            tunneling.E0_TS = (self.reaction.transitionState.conformer.E0.value_si * 0.001, "kJ/mol")
+            tunneling.E0_prod = (sum([product.conformer.E0.value_si for product in self.reaction.products])
+                                 * 0.001, "kJ/mol")
         elif tunneling is not None:
             if tunneling.frequency is not None:
                 # Frequency was given by the user
@@ -173,7 +175,7 @@ class KineticsJob(object):
                 raise ValueError('Unknown tunneling model {0!r} for reaction {1}.'.format(tunneling, self.reaction))
         logging.debug('Generating {0} kinetics model for {1}...'.format(kineticsClass, self.reaction))
         if Tlist is None:
-            Tlist = 1000.0/numpy.arange(0.4, 3.35, 0.05)
+            Tlist = 1000.0 / numpy.arange(0.4, 3.35, 0.05)
         klist = numpy.zeros_like(Tlist)
         for i in range(Tlist.shape[0]):
             klist[i] = self.reaction.calculateTSTRateCoefficient(Tlist[i])
@@ -181,7 +183,8 @@ class KineticsJob(object):
         order = len(self.reaction.reactants)
         klist *= 1e6 ** (order-1)
         self.kunits = {1: 's^-1', 2: 'cm^3/(mol*s)', 3: 'cm^6/(mol^2*s)'}[order]
-        self.Kequnits = {2:'mol^2/cm^6', 1:'mol/cm^3', 0:'       ', -1:'cm^3/mol', -2:'cm^6/mol^2'}[len(self.reaction.products)-len(self.reaction.reactants)]
+        self.Kequnits = {2:'mol^2/cm^6', 1:'mol/cm^3', 0:'       ', -1:'cm^3/mol', -2:'cm^6/mol^2'}[len(
+            self.reaction.products)-len(self.reaction.reactants)]
         self.krunits = {1: 's^-1', 2: 'cm^3/(mol*s)', 3: 'cm^6/(mol^2*s)'}[len(self.reaction.products)]
         self.reaction.kinetics = Arrhenius().fitToData(Tlist, klist, kunits=self.kunits)
         self.reaction.elementary_high_p = True
@@ -230,8 +233,8 @@ class KineticsJob(object):
                 except (SpeciesError,ZeroDivisionError):
                     k = reaction.getRateCoefficient(T)
                     kappa = 0
-                    logging.info("The species in reaction {} do not have adequate information for TST, using default kinetics values.".format(reaction))
-                tunneling = reaction.transitionState.tunneling
+                    logging.info("The species in reaction {0} do not have adequate information for TST, "
+                                 "using default kinetics values.".format(reaction))
                 ks.append(k)
                 k0s.append(k0)
 
@@ -253,11 +256,12 @@ class KineticsJob(object):
                 k = ks[n]
                 k0 = k0s[n]
                 Keq = keq_unit_converter * reaction.getEquilibriumConstant(T)  # getEquilibriumConstant returns SI units
-                k0rev = k0/Keq
-                krev =  k/Keq
+                k0rev = k0 / Keq
+                krev = k / Keq
                 k0revs.append(k0rev)
                 krevs.append(krev)
-                f.write('#    {0:4g} K {1:11.3e}   {2}  {3:11.3e}   {4:11.3e}      {5}\n'.format(T, Keq, self.Kequnits, k0rev, krev, self.krunits))
+                f.write('#    {0:4g} K {1:11.3e}   {2}  {3:11.3e}   {4:11.3e}      {5}\n'.format(
+                    T, Keq, self.Kequnits, k0rev, krev, self.krunits))
 
             f.write('#   ======= ============ =========== ============ ============= =========\n')
             f.write('\n\n')
