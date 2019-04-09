@@ -211,7 +211,7 @@ Each reaction family contains the files:
 * training.py containing a training set for the family
 * rules.py containing kinetic parameters for rules
 
-There are currently 58 reaction families in RMG:
+There are currently 66 reaction families in RMG:
 
 .. |f01| image:: images/kinetics_families/1,2-Birad_to_alkene.png
     :scale: 25%
