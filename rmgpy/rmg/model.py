@@ -365,7 +365,7 @@ class CoreEdgeReactionModel:
         # At this point we can conclude that the structure does not exist
         return False, False, None
 
-    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True):
+    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, generateThermo=True):
         """
         Formally create a new species from the specified `object`, which can be
         either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
@@ -430,25 +430,11 @@ class CoreEdgeReactionModel:
             spec.generate_resonance_structures()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
 
-        # if not spec.thermo:
-        #     submit(spec,self.solventName)
-        #
-        # if spec.label == '':
-        #     if spec.thermo and spec.thermo.label != '': #check if thermo libraries have a name for it
-        #         logging.info('Species with SMILES of {0} named {1} based on thermo library name'.format(molecule.toSMILES().replace('/','').replace('\\',''),spec.thermo.label))
-        #         spec.label = spec.thermo.label
-        #         label = spec.label
-        #     else:
-        #         # Use SMILES as default format for label
-        #         # However, SMILES can contain slashes (to describe the
-        #         # stereochemistry around double bonds); since RMG doesn't
-        #         # distinguish cis and trans isomers, we'll just strip these out
-        #         # so that we can use the label in file paths
-        #         label = molecule.toSMILES().replace('/','').replace('\\','')
-        #
-        # logging.debug('Creating new species {0}'.format(label))
-        #
-        # spec.generateEnergyTransferModel()
+        if generateThermo:
+            self.generateThermo(spec)
+
+        logging.debug('Creating new species {0}'.format(spec.label))
+
         formula = molecule.getFormula()
         if formula in self.speciesDict:
             self.speciesDict[formula].append(spec)
@@ -546,7 +532,7 @@ class CoreEdgeReactionModel:
 
         return False, None
 
-    def makeNewReaction(self, forward, checkExisting=True):
+    def makeNewReaction(self, forward, checkExisting=True, generateThermo=True):
         """
         Make a new reaction given a :class:`Reaction` object `forward`.
         The reaction is added to the global list of reactions.
@@ -562,8 +548,8 @@ class CoreEdgeReactionModel:
         """
 
         # Determine the proper species objects for all reactants and products
-        reactants = [self.makeNewSpecies(reactant)[0] for reactant in forward.reactants]
-        products  = [self.makeNewSpecies(product)[0]  for product  in forward.products ]
+        reactants = [self.makeNewSpecies(reactant, generateThermo=generateThermo)[0] for reactant in forward.reactants]
+        products  = [self.makeNewSpecies(product, generateThermo=generateThermo)[0]  for product  in forward.products ]
         if forward.specificCollider is not None:
             forward.specificCollider = self.makeNewSpecies(forward.specificCollider)[0]
 
@@ -688,7 +674,7 @@ class CoreEdgeReactionModel:
                 pdepNetwork, newSpecies = newObject
                 newReactions.extend(pdepNetwork.exploreIsomer(newSpecies))
 
-                self.processNewReactions(newReactions, newSpecies, pdepNetwork)
+                self.processNewReactions(newReactions, newSpecies, pdepNetwork, generateThermo=False)
 
             else:
                 raise TypeError('Unable to use object {0} to enlarge reaction model; expecting an object of class rmg.model.Species or rmg.model.PDepNetwork, not {1}'.format(newObject, newObject.__class__))
@@ -709,7 +695,7 @@ class CoreEdgeReactionModel:
                         if len(products) == 1 and products[0] == species:
                             newReactions = network.exploreIsomer(species)
 
-                            self.processNewReactions(newReactions, species, network)
+                            self.processNewReactions(newReactions, species, network, generateThermo=False)
                             network.updateConfigurations(self)
                             index = 0
                             break
@@ -755,7 +741,7 @@ class CoreEdgeReactionModel:
             # ensure_independent_atom_ids(spcs, resonance=True)
 
             for rxn, spc in zip(rxns, spcs):
-               self.processNewReactions([rxn], spc)
+               self.processNewReactions([rxn], spc, generateThermo=False)
 
         ################################################################
         # Begin processing the new species and reactions
@@ -877,7 +863,7 @@ class CoreEdgeReactionModel:
         self.newSurfaceSpcsLoss = set()
         self.newSurfaceRxnsLoss = set()
 
-    def processNewReactions(self, newReactions, newSpecies, pdepNetwork=None):
+    def processNewReactions(self, newReactions, newSpecies, pdepNetwork=None, generateThermo=True):
         """
         Process a list of newly-generated reactions involving the new core
         species or explored isomer `newSpecies` in network `pdepNetwork`.
@@ -885,7 +871,7 @@ class CoreEdgeReactionModel:
         Makes a reaction and decides where to put it: core, edge, or PDepNetwork.
         """
         for rxn in newReactions:
-            rxn, isNew = self.makeNewReaction(rxn)
+            rxn, isNew = self.makeNewReaction(rxn, generateThermo=generateThermo)
             if rxn is None:
                 # Skip this reaction because there was something wrong with it
                 continue
