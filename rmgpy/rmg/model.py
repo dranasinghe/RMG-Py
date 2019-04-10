@@ -430,25 +430,25 @@ class CoreEdgeReactionModel:
             spec.generate_resonance_structures()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
 
-        if not spec.thermo:
-            submit(spec,self.solventName)
-
-        if spec.label == '':
-            if spec.thermo and spec.thermo.label != '': #check if thermo libraries have a name for it
-                logging.info('Species with SMILES of {0} named {1} based on thermo library name'.format(molecule.toSMILES().replace('/','').replace('\\',''),spec.thermo.label))
-                spec.label = spec.thermo.label
-                label = spec.label
-            else:
-                # Use SMILES as default format for label
-                # However, SMILES can contain slashes (to describe the
-                # stereochemistry around double bonds); since RMG doesn't
-                # distinguish cis and trans isomers, we'll just strip these out
-                # so that we can use the label in file paths
-                label = molecule.toSMILES().replace('/','').replace('\\','')
-
-        logging.debug('Creating new species {0}'.format(label))
-
-        spec.generateEnergyTransferModel()
+        # if not spec.thermo:
+        #     submit(spec,self.solventName)
+        #
+        # if spec.label == '':
+        #     if spec.thermo and spec.thermo.label != '': #check if thermo libraries have a name for it
+        #         logging.info('Species with SMILES of {0} named {1} based on thermo library name'.format(molecule.toSMILES().replace('/','').replace('\\',''),spec.thermo.label))
+        #         spec.label = spec.thermo.label
+        #         label = spec.label
+        #     else:
+        #         # Use SMILES as default format for label
+        #         # However, SMILES can contain slashes (to describe the
+        #         # stereochemistry around double bonds); since RMG doesn't
+        #         # distinguish cis and trans isomers, we'll just strip these out
+        #         # so that we can use the label in file paths
+        #         label = molecule.toSMILES().replace('/','').replace('\\','')
+        #
+        # logging.debug('Creating new species {0}'.format(label))
+        #
+        # spec.generateEnergyTransferModel()
         formula = molecule.getFormula()
         if formula in self.speciesDict:
             self.speciesDict[formula].append(spec)
@@ -736,32 +736,37 @@ class CoreEdgeReactionModel:
                 spcs_list.extend(rxn.reactants)
                 spcs_list.extend(rxn.products)
 
-            # Determine number of parallel processes.
-            procnum = determine_procnum_from_RAM()
-
-            if spcs_list and procnum > 1:
-                from rmgpy.rmg.input import getInput
-                quantumMechanics = getInput('quantumMechanics')
-                if quantumMechanics:
-                    # Generate unique species list to avoid race conditions when writing the QMTP files in parallel.
-                    for i, spc_QMTP in enumerate(spcs_list):
-                        if spc_QMTP:
-                            spc_QMTP.generate_resonance_structures()      
-                            for j in range(i+1, len(spcs_list)):
-                                spc2_QMTP = spcs_list[j]
-                                if spc2_QMTP and spc_QMTP.isIsomorphic(spc2_QMTP):
-                                    spcs_list[j] = []
-                    spcs_list = filter(None, spcs_list)
-                    from rmgpy.rmg.model import generate_QMfiles
-                    generate_QMfiles(spcs_list, quantumMechanics, procnum)
-
-            ensure_independent_atom_ids(spcs, resonance=True)
+            # if spcs_list and procnum > 1:
+            #     from rmgpy.rmg.input import getInput
+            #     quantumMechanics = getInput('quantumMechanics')
+            #     if quantumMechanics:
+            #         # Generate unique species list to avoid race conditions when writing the QMTP files in parallel.
+            #         for i, spc_QMTP in enumerate(spcs_list):
+            #             if spc_QMTP:
+            #                 spc_QMTP.generate_resonance_structures()
+            #                 for j in range(i+1, len(spcs_list)):
+            #                     spc2_QMTP = spcs_list[j]
+            #                     if spc2_QMTP and spc_QMTP.isIsomorphic(spc2_QMTP):
+            #                         spcs_list[j] = []
+            #         spcs_list = filter(None, spcs_list)
+            #         from rmgpy.rmg.model import generate_QMfiles
+            #         generate_QMfiles(spcs_list, quantumMechanics, procnum)
+            #
+            # ensure_independent_atom_ids(spcs, resonance=True)
 
             for rxn, spc in zip(rxns, spcs):
                self.processNewReactions([rxn], spc)
 
         ################################################################
         # Begin processing the new species and reactions
+
+        # Determine number of parallel processes.
+        procnum = determine_procnum_from_RAM()
+
+        # Generate thermo for new species
+        if self.newSpeciesList:
+            logging.info('Generating thermo for new species...')
+            self.applyThermoToSpecies(procnum)
 
         # Generate kinetics of new reactions
         if self.newReactionList:
@@ -951,6 +956,67 @@ class CoreEdgeReactionModel:
             if not numpy.isinf(self.toleranceThermoKeepSpeciesInEdge) and spcs != []: #do thermodynamic filtering
                 self.thermoFilterSpecies(spcs)
 
+    def applyThermoToSpecies(self, procnum):
+        """
+        Generate thermo for species. QM calculations are parallelized if requested.
+        """
+        from rmgpy.rmg.input import getInput
+        quantumMechanics = getInput('quantumMechanics')
+
+        if quantumMechanics:
+            # Generate a list of molecules.
+            mol_list = []
+            for spc in self.newSpeciesList:
+                if spc.molecule[0].getRadicalCount() > quantumMechanics.settings.maxRadicalNumber:
+                    for molecule in spc.molecule:
+                        if quantumMechanics.settings.onlyCyclics and molecule.isCyclic():
+                            saturated_mol = molecule.copy(deep=True)
+                            saturated_mol.saturate_radicals()
+                            if saturated_mol not in mol_list:
+                                mol_list.append(saturated_mol)
+                else:
+                    if quantumMechanics.settings.onlyCyclics and spc.molecule[0].isCyclic():
+                        if spc.molecule[0] not in mol_list:
+                            mol_list.append(spc.molecule[0])
+            if procnum == 1:
+                logging.info('Writing QM files with {0} process.'.format(procnum))
+                map(quantumMechanics.getThermoData, mol_list)
+            else:
+                logging.info('Writing QM files with {0} processes.'.format(procnum))
+                p = Pool(processes=procnum)
+                p.map(quantumMechanics.getThermoData, mol_list)
+                p.close()
+                p.join()
+
+        # Also parallelize rest of thermo processing
+        if procnum == 1:
+            map(self.generateThermo, self.newSpeciesList)
+        else:
+            p = Pool(processes=procnum)
+            p.map(self.generateThermo, self.newSpeciesList)
+            p.close()
+            p.join()
+
+    def generateThermo(self, spc):
+        """
+        Generate thermo for species.
+        """
+        if not spc.thermo:
+            submit(spc, self.solventName)
+
+        if spc.label == '':
+            if spc.thermo and spc.thermo.label != '': #check if thermo libraries have a name for it
+                logging.info('Species with SMILES of {0} named {1} based on thermo library name'.format(spc.molecule[0].toSMILES().replace('/','').replace('\\',''), spc.thermo.label))
+                spc.label = spc.thermo.label
+            else:
+                # Use SMILES as default format for label
+                # However, SMILES can contain slashes (to describe the
+                # stereochemistry around double bonds); since RMG doesn't
+                # distinguish cis and trans isomers, we'll just strip these out
+                # so that we can use the label in file paths
+                spc.label = spc.molecule[0].toSMILES().replace('/','').replace('\\','')
+
+        spc.generateEnergyTransferModel()
 
     def applyKineticsToReaction(self, reaction):
         """
