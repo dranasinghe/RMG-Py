@@ -974,14 +974,8 @@ class CoreEdgeReactionModel:
                 p.close()
                 p.join()
 
-        # Also parallelize rest of thermo processing
-        if procnum == 1:
-            map(self.generateThermo, self.newSpeciesList)
-        else:
-            p = Pool(processes=procnum)
-            p.map(self.generateThermo, self.newSpeciesList)
-            p.close()
-            p.join()
+        # Serial thermo calculation for other methods
+        map(self.generateThermo, self.newSpeciesList)
 
     def generateThermo(self, spc):
         """
