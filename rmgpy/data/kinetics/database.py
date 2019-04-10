@@ -541,10 +541,22 @@ and immediately used in input files without any additional changes.
         for label, family in self.families.iteritems():
             if only_families is None or label in only_families:
                 try:
-                    reaction_list.extend(family.generateReactions(molecules, products=products, prod_resonance=prod_resonance))
+                    reaction_list.extend(family.generateReactions(molecules, products=products,
+                                                                  prod_resonance=prod_resonance))
                 except:
                     logging.error("Problem family: {}".format(label))
                     logging.error("Problem reactants: {}".format(molecules))
+                    logging.error('\n\n\n')
+                    for i, atom in enumerate(molecules[0].atoms):
+                        logging.error('atom {0}:'.format(i))
+                        logging.error(atom)
+                        logging.error((type(atom)))
+                        if isinstance(atom, list):
+                            for atm in atom:
+                                logging.error(atm)
+                                logging.error((type(atm)))
+                        logging.error('\n\n\n')
+                    logging.error(molecules[0].toAdjacencyList())
                     raise
 
         for reactant in molecules:
