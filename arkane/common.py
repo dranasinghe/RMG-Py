@@ -285,7 +285,7 @@ def is_pdep(jobList):
     return False
 
 
-def check_conformer_energy(Vlist,path):
+def check_conformer_energy(Vlist, path):
     """
     Check to see that the starting energy of the species in the potential energy scan calculation
     is not 0.5 kcal/mol (or more) higher than any other energies in the scan. If so, print and 
@@ -293,13 +293,16 @@ def check_conformer_energy(Vlist,path):
     """    
     Vlist = numpy.array(Vlist, numpy.float64)
     Vdiff = (Vlist[0] - numpy.min(Vlist))*constants.E_h*constants.Na/1000
-    if Vdiff >= 2: #we choose 2 kJ/mol to be the critical energy
-        logging.warning('the species corresponding to ' + str(os.path.basename(path)) + ' is different in energy from the lowest energy conformer by ' + "%0.2f" % Vdiff + ' kJ/mol. This can cause significant errors in your computed rate constants. ')
+    if Vdiff >= 2:  # we choose 2 kJ/mol to be the critical energy
+        logging.warning('the species corresponding to ' + str(os.path.basename(path))\
+                        + ' is different in energy from the lowest energy conformer by '\
+                        + "%0.2f" % Vdiff + ' kJ/mol. This can cause significant errors in your '
+                        'computed rate constants. ')
 
 
 def get_element_mass(input_element, isotope=None):
     """
-    Returns the mass and z number of the requested isotop for a given element.
+    Returns the mass and z number of the requested isotope for a given element.
     'input_element' can be wither the atomic number (integer) or an element symbol.
     'isotope' is an integer of the atomic z number. If 'isotope' is None, returns the most common isotope.
     Data taken from NIST, https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl (accessed October 2018)
