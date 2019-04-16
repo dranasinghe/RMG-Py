@@ -42,7 +42,435 @@ import rmgpy.constants as constants
 cimport rmgpy.constants as constants
 from rmgpy.quantity import Quantity
 from rmgpy.quantity cimport ScalarQuantity, ArrayQuantity
+from rmgpy.kinetics.arrhenius import Arrhenius
 
+###############################################################################
+def get_filterlist_of_all_RMG_families():
+    """
+    List of available reaction families in RMG. Has to be updated once a new family is added.
+    In addition, an Arrhenius fit based on the max. rates from this families training reations 
+    has to be added to get_uni_bimolecular_threshold_rate_constant and the corresponding position.
+    """
+    all_families = [
+            'Intra_R_Add_Exocyclic', 'Cyclopentadiene_scission', '2+2_cycloaddition_CO',
+                'R_Addition_CSm', 'Disproportionation', '1,2-Birad_to_alkene',
+                'Intra_R_Add_Exo_scission', 'H2_Loss', '1,3_Insertion_ROR',
+                'Baeyer-Villiger_step1_cat', 'Intra_RH_Add_Endocyclic',
+                'Baeyer-Villiger_step2_cat', 'Korcek_step2', 'Singlet_Val6_to_triplet',
+                'Intra_Retro_Diels_alder_bicyclic', 'R_Addition_MultipleBond',
+                'Concerted_Intra_Diels_alder_monocyclic_1,2_shiftH', 'Cyclic_Thioether_Formation',
+                'Intra_R_Add_Endocyclic', '1,3_Insertion_CO2', '1+2_Cycloaddition',
+                'Bimolec_Hydroperoxide_Decomposition', 'Intra_R_Add_ExoTetCyclic',
+                'Peroxyl_Termination', 'CO_Disproportionation', 'Intra_Disproportionation',
+                'SubstitutionS', 'Korcek_step1', 'intra_substitutionS_cyclization',
+                'Korcek_step1_cat', '1,4_Linear_birad_scission', '1,2_Insertion_carbene',
+                'H_Abstraction', 'Intra_5_membered_conjugated_C=C_C=C_addition',
+                'Intra_ene_reaction', 'intra_H_migration', 'Baeyer-Villiger_step2',
+                '1,2_Insertion_CO', 'Substitution_O', 'Intra_RH_Add_Exocyclic',
+                'Cyclic_Ether_Formation', '1,2_shiftC', 'lone_electron_pair_bond',
+                'HO2_Elimination_from_PeroxyRadical', 'Birad_recombination',
+                'Diels_alder_addition', 'R_Addition_COm', 'intra_substitutionCS_cyclization',
+                '2+2_cycloaddition_CS','1,2_shiftS', 'intra_OH_migration',
+                'Birad_R_Recombination','Singlet_Carbene_Intra_Disproportionation',
+                '6_membered_central_C-C_shift','intra_substitutionCS_isomerization',
+                '2+2_cycloaddition_CCO','intra_substitutionS_isomerization',
+                '2+2_cycloaddition_Cd','Intra_2+2_cycloaddition_Cd',
+                'Intra_Diels_alder_monocyclic', 'R_Recombination',
+                '1,3_Insertion_RSR', '1,4_Cyclic_birad_scission',
+                'intra_NO2_ONO_conversion','ketoenol', 'Peroxyl_Disproportionation'
+                ]
+    return all_families
+
+
+def get_uni_bimolecular_threshold_rate_constant(T):
+    """
+    Get the bimolecular threshold rate constants for reaction filtering.
+    Using current 66 RMG reaction families.
+    """
+
+    # List of unimolecular kinetics
+    unimol_kinetics_list = [
+        Arrhenius(A=(2.1548e-15,'s^-1'), n=8.65061, Ea=(-122.419,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 20.5283, dn = +|- 0.383077, 
+            dEa = +|- 2.61431 kJ/mol"""),
+        Arrhenius(A=(2.51056e+17,'s^-1'), n=-1.48728, Ea=(95.6898,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.11795e-15, 
+            dEa = +|- 1.4454e-14 kJ/mol"""),
+        Arrhenius(A=(4.19097e+11,'s^-1'), n=0.542031, Ea=(48.0397,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.67845e-15, 
+            dEa = +|- 1.82791e-14 kJ/mol"""),
+        Arrhenius(A=(3.06643e+07,'s^-1'), n=4.05506, Ea=(364.729,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 3.71715, dn = +|- 0.166445, 
+            dEa = +|- 1.1359 kJ/mol"""),
+        [],
+        Arrhenius(A=(1e+10,'s^-1'), n=-6.64137e-15, Ea=(6.11426e-14,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.69925e-15, 
+            dEa = +|- 1.15965e-14 kJ/mol"""),
+        Arrhenius(A=(7.809e+07,'s^-1'), n=1.057, Ea=(63.0152,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.62696e-15, 
+            dEa = +|- 1.11032e-14 kJ/mol"""),
+        Arrhenius(A=(4.82588e+09,'s^-1'), n=0.803687, Ea=(72.0667,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1.15661, dn = +|- 0.0184441,
+            dEa = +|- 0.125872 kJ/mol"""),
+        Arrhenius(A=(4.49138e+06,'s^-1'), n=3.19054, Ea=(123.447,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.08198e-15, 
+            dEa = +|- 2.1033e-14 kJ/mol"""),
+        [],
+        [],
+        [],
+        [],
+        Arrhenius(A=(2.69922e+09,'s^-1'), n=2.23108, Ea=(-23.2466,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 5.18462, dn = +|- 0.208626, 
+            dEa = +|- 1.42377 kJ/mol"""),
+        [],
+        Arrhenius(A=(8.36742e-37,'s^-1'), n=15.6692, Ea=(-79.9819,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 37.755, dn = +|- 0.46032, 
+            dEa = +|- 3.14146 kJ/mol"""),
+        Arrhenius(A=(3.60572e+16,'s^-1'), n=-0.490221, Ea=(118.723,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.56237e-15, 
+            dEa = +|- 2.43114e-14 kJ/mol"""),
+        [],
+        Arrhenius(A=(31.1508,'s^-1'), n=4.20415, Ea=(-67.1521,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 4.40734, dn = +|- 0.188036,
+            dEa = +|- 1.28325 kJ/mol"""),
+        Arrhenius(A=(22135.6,'s^-1'), n=3.10576, Ea=(287.824,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 4.16477, dn = +|- 0.180859,
+            dEa = +|- 1.23428 kJ/mol"""),
+        Arrhenius(A=(1.25061e+25,'s^-1'), n=-2.6694, Ea=(362.294,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1.10756, dn = +|- 0.0129508,
+            dEa = +|- 0.088383 kJ/mol"""),
+        [],
+        [],
+        [],
+        [],
+        Arrhenius(A=(1.949e+11,'s^-1'), n=0.486, Ea=(22.8614,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.78153e-15,
+            dEa = +|- 2.58071e-14 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(7.15311,'s^-1'), n=3.63158, Ea=(32.7853,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 51.476, dn = +|- 0.499619,
+            dEa = +|- 3.40965 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(9.09546e+17,'s^-1'), n=-0.747035, Ea=(447.041,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1.42527, dn = +|- 0.0449229,
+            dEa = +|- 0.306577 kJ/mol"""),
+        [],
+        Arrhenius(A=(9.86304e+10,'s^-1'), n=0.836047, Ea=(79.2187,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.74493e-15,
+            dEa = +|- 1.19083e-14 kJ/mol"""),
+        Arrhenius(A=(27.788,'s^-1'), n=3.56981, Ea=(17.5282,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 2.95262, dn = +|- 0.137254,
+            dEa = +|- 0.936691 kJ/mol"""),
+        Arrhenius(A=(32804.1,'s^-1'), n=2.27586, Ea=(-3.34049,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 5.22479, dn = +|- 0.209605,
+            dEa = +|- 1.43045 kJ/mol"""),
+        Arrhenius(A=(2.8594e+09,'s^-1'), n=1.09585, Ea=(90.8931,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 2.42346, dn = +|- 0.112217,
+            dEa = +|- 0.765828 kJ/mol"""),
+        Arrhenius(A=(3.33623e+08,'s^-1'), n=1.58566, Ea=(274.448,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 4.34887e-15,
+            dEa = +|- 2.96789e-14 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(0.0211122,'s^-1'), n=4.09341, Ea=(4.27861,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 33.1388, dn = +|- 0.443787,
+            dEa = +|- 3.02863 kJ/mol"""),
+        Arrhenius(A=(8.66e+11,'s^-1'), n=0.438, Ea=(94.4747,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.63603e-15,
+            dEa = +|- 1.11651e-14 kJ/mol"""),
+        [],
+        Arrhenius(A=(21583.8,'s^-1'), n=2.90923, Ea=(106.401,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 6.91976, dn = +|- 0.245223,
+            dEa = +|- 1.67353 kJ/mol"""),
+        Arrhenius(A=(2.18e+16,'s^-1'), n=-1.0059e-14, Ea=(2.9288,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 5.97248e-15,
+            dEa = +|- 4.07593e-14 kJ/mol"""),
+        Arrhenius(A=(1.17242e-21,'s^-1'), n=11.0661, Ea=(17.1225,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 4.46687e-15,
+            dEa = +|- 3.04842e-14 kJ/mol"""),
+        Arrhenius(A=(1.5378e+14,'s^-1'), n=0.264564, Ea=(20.2142,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.09632e-15,
+            dEa = +|- 2.11309e-14 kJ/mol"""),
+        [],
+        [],
+        [],
+        Arrhenius(A=(181.219,'s^-1'), n=2.3668, Ea=(50.9862,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 5.67183, dn = +|- 0.220012,
+            dEa = +|- 1.50148 kJ/mol"""),
+        Arrhenius(A=(9.40883e+22,'s^-1'), n=-0.830214, Ea=(159.721,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 5.2588e-15,
+            dEa = +|- 3.58887e-14 kJ/mol"""),
+        Arrhenius(A=(1.454e+12,'s^-1'), n=0.178, Ea=(0.85772,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.373e-15,
+            dEa = +|- 2.30191e-14 kJ/mol"""),
+        Arrhenius(A=(3.53521e+20,'s^-1'), n=-2.14941, Ea=(84.4898,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.0056e-15, 
+            dEa = +|- 1.36872e-14 kJ/mol"""),
+        Arrhenius(A=(607.614,'s^-1'), n=2.9594, Ea=(180.721,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 6.44969, dn = +|- 0.236305,
+            dEa = +|- 1.61267 kJ/mol"""),
+        [],
+        Arrhenius(A=(2228.54,'s^-1'), n=2.59523, Ea=(79.3728,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 9.24147, dn = +|- 0.281901, 
+            dEa = +|- 1.92383 kJ/mol"""),
+        Arrhenius(A=(3.47729e+15,'s^-1'), n=-0.0133205, Ea=(253.025,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.42822e-15, 
+            dEa = +|- 2.33959e-14 kJ/mol"""),
+        Arrhenius(A=(0.0435533,'s^-1'), n=4.08745, Ea=(103.277,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 15.3826, dn = +|- 0.346495, 
+            dEa = +|- 2.36466 kJ/mol"""),
+        Arrhenius(A=(1.4544e+12,'s^-1'), n=0.301801, Ea=(-1.2548,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.47428e-15, 
+            dEa = +|- 1.00612e-14 kJ/mol"""),
+        Arrhenius(A=(6.85921e-07,'s^-1'), n=5.65681, Ea=(-64.6036,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 21.0499, dn = +|- 0.386257, 
+            dEa = +|- 2.63602 kJ/mol"""),
+        Arrhenius(A=(6.13062e+10,'s^-1'), n=2.21279, Ea=(128.085,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.304e-15, 
+            dEa = +|- 1.57237e-14 kJ/mol"""),
+        Arrhenius(A=(1.67986e+13,'s^-1'), n=0.420292, Ea=(21.9887,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.88394e-15, 
+            dEa = +|- 1.96815e-14 kJ/mol"""),
+        Arrhenius(A=(722095,'s^-1'), n=2.22801, Ea=(238.399,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1.94083, dn = +|- 0.0840635, 
+            dEa = +|- 0.573692 kJ/mol"""),
+        Arrhenius(A=(104,'s^-1'), n=3.21, Ea=(82.0482,'kJ/mol'),
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'),
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 7.65184e-15, 
+            dEa = +|- 5.22201e-14 kJ/mol"""),
+        []
+    ]
+    
+    # List of bimolecular kinetics
+    bimol_kinetics_list = [
+        [],
+        [],
+        Arrhenius(A=(2.319e-07,'m^3/(mol*s)'), n=3.416, Ea=(322.616,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 5.81451e-15, 
+            dEa = +|- 3.96812e-14 kJ/mol"""),
+        Arrhenius(A=(1.2e+07,'m^3/(mol*s)'), n=2.11, Ea=(10.2926,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.66533e-15, 
+            dEa = +|- 1.13651e-14 kJ/mol"""),
+        Arrhenius(A=(3.71358e-08,'m^3/(mol*s)'), n=4.90833, Ea=(-21.5849,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 8.35058, dn = +|- 0.26905, 
+            dEa = +|- 1.83613 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(477137,'m^3/(mol*s)'), n=2.9449, Ea=(-96.2703,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.48379e-15, 
+            dEa = +|- 2.37752e-14 kJ/mol"""),
+        Arrhenius(A=(4.86e-07,'m^3/(mol*s)'), n=3.55, Ea=(101.797,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.24939e-15, 
+            dEa = +|- 1.5351e-14 kJ/mol"""),
+        Arrhenius(A=(3.46333e+06,'m^3/(mol*s)'), n=-0.929161, Ea=(42.315,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 9.48759e-16, 
+            dEa = +|- 6.47482e-15 kJ/mol"""),
+        [],
+        Arrhenius(A=(4.74858e-09,'m^3/(mol*s)'), n=4.24247, Ea=(83.3223,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.32974e-15, 
+            dEa = +|- 1.58993e-14 kJ/mol"""),
+        [],
+        [],
+        [],
+        Arrhenius(A=(3.92165e-11,'m^3/(mol*s)'), n=5.41917, Ea=(-92.6718,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 17.0778, dn = +|- 0.359748, 
+            dEa = +|- 2.4551 kJ/mol"""),
+        [],
+        [],
+        [],
+        Arrhenius(A=(1.33741,'m^3/(mol*s)'), n=2.15746, Ea=(304.387,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 4.07671, dn = +|- 0.17815, 
+            dEa = +|- 1.21579 kJ/mol"""),
+        Arrhenius(A=(8.19836e+06,'m^3/(mol*s)'), n=0.145041, Ea=(-3.96815,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1.50944, dn = +|- 0.0521967, 
+            dEa = +|- 0.356217 kJ/mol"""),
+        Arrhenius(A=(127965,'m^3/(mol*s)'), n=0.933342, Ea=(111.519,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 6.41962, dn = +|- 0.235713, 
+            dEa = +|- 1.60862 kJ/mol"""),
+        [],
+        Arrhenius(A=(120000,'m^3/(mol*s)'), n=-1.31735e-14, Ea=(-4.184,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.94625e-15, 
+            dEa = +|- 1.32822e-14 kJ/mol"""),
+        Arrhenius(A=(1.2e+08,'m^3/(mol*s)'), n=-1.20033e-14, Ea=(1.11491e-13,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.09852e-15, 
+            dEa = +|- 2.11459e-14 kJ/mol"""),
+        [],
+        Arrhenius(A=(0.000160472,'m^3/(mol*s)'), n=3.8024, Ea=(-10.9764,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 15.0279, dn = +|- 0.343538, 
+            dEa = +|- 2.34448 kJ/mol"""),
+        [],
+        Arrhenius(A=(17580.9,'m^3/(mol*s)'), n=1.98548, Ea=(-106.532,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 4.80061e-15, 
+            dEa = +|- 3.27618e-14 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(51795.3,'m^3/(mol*s)'), n=0.681821, Ea=(-9.92113,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 2.01108, dn = +|- 0.0885713, 
+            dEa = +|- 0.604456 kJ/mol"""),
+        Arrhenius(A=(1.46107e-12,'m^3/(mol*s)'), n=4.73222, Ea=(-278.229,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 16576.3, dn = +|- 1.23167, 
+            dEa = +|- 8.40556 kJ/mol"""),
+        [],
+        [],
+        [],
+        Arrhenius(A=(2.03275e-17,'m^3/(mol*s)'), n=6.6413, Ea=(205.734,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 6.88308e-15, 
+            dEa = +|- 4.69737e-14 kJ/mol"""),
+        Arrhenius(A=(1.27e-07,'m^3/(mol*s)'), n=3.7, Ea=(223.258,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.66187e-15, 
+            dEa = +|- 1.81659e-14 kJ/mol"""),
+        Arrhenius(A=(1.34785e-07,'m^3/(mol*s)'), n=4.7731, Ea=(-85.8887,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 2.54359e-15, 
+            dEa = +|- 1.73587e-14 kJ/mol"""),
+        [],
+        Arrhenius(A=(8.18963e-31,'m^3/(mol*s)'), n=11.428, Ea=(-13.2083,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 140.706, dn = +|- 0.627094, 
+            dEa = +|- 4.27961 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(7.37936e-08,'m^3/(mol*s)'), n=3.90078, Ea=(20.1194,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 3.75901, dn = +|- 0.167864, 
+            dEa = +|- 1.14559 kJ/mol"""),
+        [],
+        Arrhenius(A=(8.35312e-24,'m^3/(mol*s)'), n=9.17707, Ea=(-1.16914,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 29.3773, dn = +|- 0.428514, 
+            dEa = +|- 2.9244 kJ/mol"""),
+        Arrhenius(A=(0.0202143,'m^3/(mol*s)'), n=2.45362, Ea=(2.95866,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 3.00278, dn = +|- 0.13939, 
+            dEa = +|- 0.951266 kJ/mol"""),
+        [],
+        [],
+        [],
+        [],
+        Arrhenius(A=(1.29008e+06,'m^3/(mol*s)'), n=0.806257, Ea=(-5.31319,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 2.22228, dn = +|- 0.101231, 
+            dEa = +|- 0.690853 kJ/mol"""),
+        [],
+        [],
+        [],
+        [],
+        [],
+        Arrhenius(A=(4.66,'m^3/(mol*s)'), n=1.65, Ea=(226.564,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 4.19081e-15, 
+            dEa = +|- 2.86002e-14 kJ/mol"""),
+        [],
+        [],
+        Arrhenius(A=(5.6874e+10,'m^3/(mol*s)'), n=-0.0206709, Ea=(-191.106,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 3.38094e-15, 
+            dEa = +|- 2.30733e-14 kJ/mol"""),
+        Arrhenius(A=(3.80823e-13,'m^3/(mol*s)'), n=5.9792, Ea=(141.605,'kJ/mol'), 
+            T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+            comment="""Fitted to 30 data points; dA = *|/ 5.14419, dn = +|- 0.207634, 
+            dEa = +|- 1.417 kJ/mol"""),
+        [],
+        [],
+        [],
+        Arrhenius(A=(1.1e+06,'m^3/(mol*s)'), n=-1.05506e-14, Ea=(-4.184,'kJ/mol'), 
+             T0=(1,'K'), Tmin=(300,'K'), Tmax=(2500,'K'), 
+             comment="""Fitted to 30 data points; dA = *|/ 1, dn = +|- 1.19083e-15, 
+             dEa = +|- 8.12686e-15 kJ/mol""")
+    ]
+    
+    # Evaluate kinetics at user defined temperature
+    kvals_uni = []
+    for k, unimol_kinetics in enumerate(unimol_kinetics_list):
+        if unimol_kinetics:
+            kvals_uni.append(unimol_kinetics.getRateCoefficient(T))
+        else:
+            kvals_uni.append(1e8)
+    
+    kvals_bi = []
+    for k, bimol_kinetics in enumerate(bimol_kinetics_list):
+        if bimol_kinetics:
+            kvals_bi.append(bimol_kinetics.getRateCoefficient(T))
+        else:
+            kvals_bi.append(1e8)
+
+    # List of all current RMG families
+    all_families = get_filterlist_of_all_RMG_families() 
+
+    # Generate dictionary with reaction families as keys and kinetics as values
+    unimolecular_threshold_rate_constant = {
+        key: value for key, value in zip(all_families, kvals_uni)
+    }
+
+    bimolecular_threshold_rate_constant = {
+        key: value for key, value in zip(all_families, kvals_bi)
+    }
+
+    return (unimolecular_threshold_rate_constant, bimolecular_threshold_rate_constant)
+
+###############################################################################
 cdef class SimpleReactor(ReactionSystem):
     """
     A reaction system consisting of a homogeneous, isothermal, isobaric batch
@@ -242,19 +670,20 @@ cdef class SimpleReactor(ReactionSystem):
                 self.Keq[j] = rxn.getEquilibriumConstant(self.T.value_si)
                 self.kb[j] = self.kf[j] / self.Keq[j]
                 
-    def get_threshold_rate_constants(self, modelSettings):
+    def get_threshold_rate_constants(self):
         """
         Get the threshold rate constants for reaction filtering.
         """
-        # Set the maximum unimolecular rate to be kB*T/h
-        unimolecular_threshold_rate_constant = 2.08366122e10 * self.T.value_si
-        # Set the maximum bi/trimolecular rate by using the user-defined rate constant threshold
-        bimolecular_threshold_rate_constant = modelSettings.filterThreshold
+        # Set the maximum uni-/bi-/trimolecular rate by using custom rate constant thresholds for
+        # each reaction family
+        (unimolecular_threshold_rate_constant, 
+                bimolecular_threshold_rate_constant) = get_uni_bimolecular_threshold_rate_constant(self.T.value_si) 
+
         # Maximum trimolecular rate constants are approximately three
         # orders of magnitude smaller (accounting for the unit
         # conversion from m^3/mol/s to m^6/mol^2/s) based on
         # extending the Smoluchowski equation to three molecules
-        trimolecular_threshold_rate_constant = modelSettings.filterThreshold / 1e3
+        trimolecular_threshold_rate_constant = 1e8 / 1e3
         return (unimolecular_threshold_rate_constant,
                 bimolecular_threshold_rate_constant,
                 trimolecular_threshold_rate_constant)

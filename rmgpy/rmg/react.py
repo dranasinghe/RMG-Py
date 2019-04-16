@@ -36,7 +36,6 @@ import itertools
 from rmgpy.data.rmg import getDB
 from rmgpy.scoop_framework.util import map_
 
-
 def react(*spcTuples):
     """
     Generate reactions between the species in the 
@@ -54,16 +53,17 @@ def react(*spcTuples):
     Returns a flat generator object containing the generated Reaction objects.
     """
 
-    results = map_(
-                reactSpecies,
-                spcTuples)
+    results = map(_react_species_star, spcTuples)
 
     reactions = itertools.chain.from_iterable(results)
 
     return reactions
 
+def _react_species_star(args):
+	    """Wrapper to unpack zipped arguments for use with map"""
+	    return reactSpecies(*args)
 
-def reactSpecies(speciesTuple):
+def reactSpecies(speciesTuple, only_families=None):
     """
     Given a tuple of Species objects, generates all possible reactions
     from the loaded reaction families and combines degenerate reactions.
@@ -72,7 +72,7 @@ def reactSpecies(speciesTuple):
     """
     speciesTuple = tuple([spc.copy(deep=True) for spc in speciesTuple])
 
-    reactions = getDB('kinetics').generate_reactions_from_families(speciesTuple)
+    reactions = getDB('kinetics').generate_reactions_from_families(speciesTuple, only_families=only_families)
 
     deflate(reactions,
             [spec for spec in speciesTuple],
@@ -118,18 +118,25 @@ def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact
     Reacts the core species list via uni-, bi-, and trimolecular
     reactions.
     """
+    # Generate a list of families to be added to bimolecular species tuples
+    from rmgpy.solver.simple import get_filterlist_of_all_RMG_families
+    all_families = get_filterlist_of_all_RMG_families()
 
-    # Select reactive species that can undergo unimolecular reactions:
-    spcTuples = [(coreSpcList[i],)
-     for i in xrange(numOldCoreSpecies) if (unimolecularReact[i] and coreSpcList[i].reactive)]
+    spcTuples = []
+    for i in xrange (numOldCoreSpecies):
+        for k, family in enumerate (all_families):
+            # Find reactions involving the species that are unimolecular
+            if unimolecularReact[i,k] and coreSpcList[i].reactive:
+                    spcTuples.append(((coreSpcList[i],), family))
 
     for i in xrange(numOldCoreSpecies):
         for j in xrange(i, numOldCoreSpecies):
-            # Find reactions involving the species that are bimolecular
-            # This includes a species reacting with itself (if its own concentration is high enough)
-            if bimolecularReact[i,j]:
-                if coreSpcList[i].reactive and coreSpcList[j].reactive:
-                    spcTuples.append((coreSpcList[i], coreSpcList[j]))
+            for k, family in enumerate (all_families):
+                # Find reactions involving the species that are bimolecular
+                # This includes a species reacting with itself (if its own concentration is high enough)
+	        if bimolecularReact[i,j,k]:
+                    if coreSpcList[i].reactive and coreSpcList[j].reactive:
+                        spcTuples.append(((coreSpcList[i], coreSpcList[j]), family))
 
     if trimolecularReact is not None:
         for i in xrange(numOldCoreSpecies):
@@ -168,3 +175,4 @@ def deflateReaction(rxn, molDict):
         rxn.pairs = [(molDict[reactant.molecule[0]], molDict[product.molecule[0]]) for reactant, product in rxn.pairs]
     except ValueError:
         rxn.pairs = None
+
