@@ -73,7 +73,7 @@ class TestReact(unittest.TestCase):
         """
         spcA = Species().fromSMILES('[OH]')
         spcs = [Species().fromSMILES('CC'), Species().fromSMILES('[CH3]')]
-        spcTuples = [(spcA, spc) for spc in spcs]
+        spcTuples = [((spcA, spc), ['H_Abstraction']) for spc in spcs]
 
         reactionList = list(react(*spcTuples))
         self.assertIsNotNone(reactionList)
@@ -131,7 +131,7 @@ class TestReact(unittest.TestCase):
         spcs = [Species(index=indices['CC']).fromSMILES('CC'),
                 Species(index=indices['[CH3]']).fromSMILES('[CH3]')]
 
-        spcTuples = [(spcA, spc) for spc in spcs]
+        spcTuples = [((spcA, spc),['H_Abstraction']) for spc in spcs]
 
         reactionList = list(react(*spcTuples))
         self.assertIsNotNone(reactionList)
@@ -152,8 +152,9 @@ class TestReact(unittest.TestCase):
                 Species().fromSMILES('[OH]')
                 ]
 
+        LF = 66 # Number of reaction families in RMG
         N = len(spcs)
-        rxns = reactAll(spcs, N, np.ones(N), np.ones([N,N]))
+        rxns = reactAll(spcs, N, np.ones([N, LF]), np.ones([N, N, LF]))
         self.assertIsNotNone(rxns)
         self.assertTrue(all([isinstance(rxn, TemplateReaction) for rxn in rxns]))
 

@@ -140,10 +140,10 @@ class TestCoreEdgeReactionModel(unittest.TestCase):
         
         spcA = Species().fromSMILES('[OH]')
         spcs = [Species().fromSMILES('CC'), Species().fromSMILES('[CH3]')]
-        spcTuples = [(spcA, spc) for spc in spcs]
+        spcTuples = [((spcA, spc), ['H_Abstraction']) for spc in spcs]
         
         rxns = list(react(*spcTuples))
-        rxns += list(react(*[(spcs[0],spcs[1])]))
+        rxns += list(react(*[((spcs[0],spcs[1]),['H_Abstraction'])]))
         
         for rxn in rxns:
             cerm.makeNewReaction(rxn)
@@ -244,7 +244,7 @@ class TestCoreEdgeReactionModel(unittest.TestCase):
 
         spcA = Species().fromSMILES('[OH]')
         spcs = [Species().fromSMILES('CC'), Species().fromSMILES('[CH3]')]
-        spcTuples = [(spcA, spc) for spc in spcs]
+        spcTuples = [((spcA, spc), ['H_Abstraction']) for spc in spcs]
 
         rxns = list(react(*spcTuples))
 
@@ -397,7 +397,7 @@ class TestCoreEdgeReactionModel(unittest.TestCase):
         """
         spcA = Species().fromSMILES('[OH]')
         spcs = [Species().fromSMILES('CC'), Species().fromSMILES('[CH3]')]
-        spcTuples = [(spcA, spc) for spc in spcs]
+        spcTuples = [((spcA, spc), ['H_Abstraction']) for spc in spcs]
 
         rxns = list(react(*spcTuples))
 
