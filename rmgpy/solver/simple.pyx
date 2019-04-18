@@ -82,7 +82,7 @@ def get_filterlist_of_all_RMG_families():
     return all_families
 
 
-def get_uni_bimolecular_threshold_rate_constant(T):
+def get_uni_bi_trimolecular_threshold_rate_constant(T):
     """
     Get the bimolecular threshold rate constants for reaction filtering.
     Using current 66 RMG reaction families.
@@ -468,7 +468,18 @@ def get_uni_bimolecular_threshold_rate_constant(T):
         key: value for key, value in zip(all_families, kvals_bi)
     }
 
-    return (unimolecular_threshold_rate_constant, bimolecular_threshold_rate_constant)
+    # Maximum trimolecular rate constants are approximately three
+    # orders of magnitude smaller (accounting for the unit
+    # conversion from m^3/mol/s to m^6/mol^2/s) based on
+    # extending the Smoluchowski equation to three molecules
+    trimolecular_threshold_rate_constant = {
+        key: 1e-3*value for key, value in zip(all_families, kvals_bi)
+    }
+
+    return (unimolecular_threshold_rate_constant, 
+            bimolecular_threshold_rate_constant,
+            trimolecular_threshold_rate_constant
+            )
 
 ###############################################################################
 cdef class SimpleReactor(ReactionSystem):
@@ -677,13 +688,9 @@ cdef class SimpleReactor(ReactionSystem):
         # Set the maximum uni-/bi-/trimolecular rate by using custom rate constant thresholds for
         # each reaction family
         (unimolecular_threshold_rate_constant, 
-                bimolecular_threshold_rate_constant) = get_uni_bimolecular_threshold_rate_constant(self.T.value_si) 
+                bimolecular_threshold_rate_constant,
+                trimolecular_threshold_rate_constant) = get_uni_bi_trimolecular_threshold_rate_constant(self.T.value_si) 
 
-        # Maximum trimolecular rate constants are approximately three
-        # orders of magnitude smaller (accounting for the unit
-        # conversion from m^3/mol/s to m^6/mol^2/s) based on
-        # extending the Smoluchowski equation to three molecules
-        trimolecular_threshold_rate_constant = [i * 1e-3 for i in bimolecular_threshold_rate_constant]
         return (unimolecular_threshold_rate_constant,
                 bimolecular_threshold_rate_constant,
                 trimolecular_threshold_rate_constant)

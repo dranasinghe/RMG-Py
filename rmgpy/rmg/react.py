@@ -118,7 +118,7 @@ def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact
     Reacts the core species list via uni-, bi-, and trimolecular
     reactions.
     """
-    # Generate a list of families to be added to bimolecular species tuples
+    # Generate a list of families to be added to the species tuples
     from rmgpy.solver.simple import get_filterlist_of_all_RMG_families
     all_families = get_filterlist_of_all_RMG_families()
 

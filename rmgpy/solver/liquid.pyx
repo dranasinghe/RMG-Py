@@ -161,14 +161,32 @@ cdef class LiquidReactor(ReactionSystem):
         """
         Get the threshold rate constants for reaction filtering.
 
-        modelSettings is not used here, but is needed so that the method
+        lists are not used here, but are needed so that the method
         matches the one in simpleReactor.
         """
         # Set the maximum unimolecular rate to be kB*T/h
-        unimolecular_threshold_rate_constant = 2.08366122e10 * self.T.value_si
+        from rmgpy.solver.simple import get_filterlist_of_all_RMG_families
+        all_families = get_filterlist_of_all_RMG_families()
+
         # Set the maximum bi/trimolecular rates based on the Smoluchowski and Stokes-Einstein equations
-        bimolecular_threshold_rate_constant = 22.2 * self.T.value_si / self.viscosity
-        trimolecular_threshold_rate_constant = 0.11 * self.T.value_si / self.viscosity
+        unimolecular_threshold_rate_constant_tmp = []
+        bimolecular_threshold_rate_constant_tmp = []
+        trimolecular_threshold_rate_constant_tmp = []
+        for k in xrange(len(all_families)):
+            unimolecular_threshold_rate_constant_tmp.append(2.08366122e10 * self.T.value_si)
+            bimolecular_threshold_rate_constant_tmp.append(22.2 * self.T.value_si / self.viscosity)
+            trimolecular_threshold_rate_constant_tmp.append(0.11 * self.T.value_si / self.viscosity)
+
+        # Generate dictionary with reaction families as keys and kinetics as values
+        unimolecular_threshold_rate_constant = {
+            key: value for key, value in zip(all_families, unimolecular_threshold_rate_constant_tmp)
+        }
+        bimolecular_threshold_rate_constant = {
+            key: value for key, value in zip(all_families, bimolecular_threshold_rate_constant_tmp)
+        }
+        trimolecular_threshold_rate_constant = {
+            key: value for key, value in zip(all_families, trimolecular_threshold_rate_constant_tmp)
+        }
         return (unimolecular_threshold_rate_constant,
                 bimolecular_threshold_rate_constant,
                 trimolecular_threshold_rate_constant)
