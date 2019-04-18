@@ -76,7 +76,7 @@ Similarly, for a trimolecular reaction, the following expression is used:
 
 :math:`R_{trimolecular} = k_{threshold}C_A C_B C_C > \epsilon R_{char}`
 
-where :math:`k_{threshold} = 10^{-3} \cdot filterThreshold \frac{m^6}{mol^2\cdot s}`. The default ``filterThreshold`` value is :math:`10^{8} \frac{m^3}{mol\cdot s}`. This is on the same order of magnitude as the collision limit for two hydrogen atoms at 1000 K. Based on extending Smoluchowski theory to multiple molecules, the diffusion limit rate constant for trimolecular reactions (in :math:`\frac{m^6}{mol^2\cdot s}`) is approximately three orders of magnitude smaller than the rate constant for bimolecular reactions (in :math:`\frac{m^3}{mol\cdot s}`). It is assumed here that Smoluchowski theory gives a sufficient approximation to collision theory in the gas phase.
+where :math:`k_{threshold} = 10^{-3} \cdot filterThreshold \frac{m^6}{mol^2\cdot s}`. Based on extending Smoluchowski theory to multiple molecules, the diffusion limit rate constant for trimolecular reactions (in :math:`\frac{m^6}{mol^2\cdot s}`) is approximately three orders of magnitude smaller than the rate constant for bimolecular reactions (in :math:`\frac{m^3}{mol\cdot s}`). It is assumed here that Smoluchowski theory gives a sufficient approximation to collision theory in the gas phase.
 
 When the liquid-phase reactor is used, the diffusion limits are calculated using the Stokes-Einstein equation instead.
 For bimolecular reactions, this results in
