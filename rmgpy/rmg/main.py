@@ -110,7 +110,7 @@ class RMG(util.Subject):
     `trimolecular`                      ``True`` to consider reactions between three species (i.e., if trimolecular reaction families are present)
     `unimolecularThreshold`             Array of flags indicating whether a species is above the unimolecular reaction threshold for each reaction family
     `bimolecularThreshold`              Array of flags indicating whether two species are above the bimolecular reaction threshold for each reaction family
-    `trimolecularThreshold`             Array of flags indicating whether three species are above the trimolecular reaction threshold
+    `trimolecularThreshold`             Array of flags indicating whether three species are above the trimolecular reaction threshold, depending on a specific reaction family
     `unimolecularReact`                 Array of flags indicating whether a species should react unimolecularly in the enlarge step, depending on a specific reaction family
     `bimolecularReact`                  Array of flags indicating whether two species should react in the enlarge step, depending on a specific reaction family
     `trimolecularReact`                 Array of flags indicating whether three species should react in the enlarge step
@@ -1274,14 +1274,16 @@ class RMG(util.Subject):
             self.unimolecularThreshold = np.zeros((numCoreSpecies, NUMBER_RMG_FAMILIES),bool)
             self.bimolecularThreshold = np.zeros((numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES),bool)
             if self.trimolecular:
-                self.trimolecularReact = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies), bool)
-                self.trimolecularThreshold = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies), bool)
+                self.trimolecularReact = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies, 
+                    NUMBER_RMG_FAMILIES), bool)
+                self.trimolecularThreshold = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies, 
+                    NUMBER_RMG_FAMILIES), bool)
         else:
             # By default, react everything
             self.unimolecularReact = np.ones((numCoreSpecies, NUMBER_RMG_FAMILIES),bool)
             self.bimolecularReact = np.ones((numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES),bool)
             if self.trimolecular:
-                self.trimolecularReact = np.ones((numCoreSpecies, numCoreSpecies, numCoreSpecies),bool)
+                self.trimolecularReact = np.ones((numCoreSpecies, numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES),bool)
             # No need to initialize reaction threshold arrays in this case
     
     def updateReactionThresholdAndReactFlags(self,
@@ -1303,7 +1305,7 @@ class RMG(util.Subject):
         self.unimolecularReact = np.zeros((numCoreSpecies, NUMBER_RMG_FAMILIES), bool)
         self.bimolecularReact = np.zeros((numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES), bool)
         if self.trimolecular:
-            self.trimolecularReact = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies), bool)
+            self.trimolecularReact = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES), bool)
 
         if self.filterReactions:
             if new_core_species:
@@ -1318,10 +1320,11 @@ class RMG(util.Subject):
                 self.bimolecularThreshold = bimolecularThreshold
 
                 if self.trimolecular:
-                    trimolecularThreshold = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies), bool)
+                    trimolecularThreshold = np.zeros((numCoreSpecies, numCoreSpecies, numCoreSpecies, NUMBER_RMG_FAMILIES), bool)
                     trimolecularThreshold[:prevNumCoreSpecies,
                                           :prevNumCoreSpecies,
-                                          :prevNumCoreSpecies] = self.trimolecularThreshold
+                                          :prevNumCoreSpecies,
+                                          :NUMBER_RMG_FAMILIES] = self.trimolecularThreshold
                     self.trimolecularThreshold = trimolecularThreshold
                 
             if skipUpdate:
@@ -1347,10 +1350,11 @@ class RMG(util.Subject):
                 for i in xrange(numCoreSpecies):
                     for j in xrange(i, numCoreSpecies):
                         for k in xrange(j, numCoreSpecies):
-                            if not self.trimolecularThreshold[i,j,k] and rxnSysTrimolecularThreshold[i,j,k]:
-                                # We've shifted from not reacting to reacting
-                                self.trimolecularReact[i,j,k] = True
-                                self.trimolecularThreshold[i,j,k] = True
+                            for l in xrange(NUMBER_RMG_FAMILIES):
+                                if not self.trimolecularThreshold[i,j,k,l] and rxnSysTrimolecularThreshold[i,j,k,l]:
+                                    # We've shifted from not reacting to reacting
+                                    self.trimolecularReact[i,j,k,l] = True
+                                    self.trimolecularThreshold[i,j,k,l] = True
         else:
             # We are not filtering reactions
             if new_core_species:
@@ -1370,7 +1374,8 @@ class RMG(util.Subject):
                     for i in xrange(numCoreSpecies):
                         for j in xrange(numCoreSpecies):
                             for k in xrange(prevNumCoreSpecies, numCoreSpecies):
-                                self.trimolecularReact[i,j,k] = True
+                                for l in xrange(NUMBER_RMG_FAMILIES):
+                                    self.trimolecularReact[i,j,k,l] = True
 
         
     def saveEverything(self):

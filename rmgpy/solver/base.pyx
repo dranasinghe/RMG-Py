@@ -264,8 +264,8 @@ cdef class ReactionSystem(DASx):
         self.bimolecularThreshold = numpy.zeros((self.numCoreSpecies, self.numCoreSpecies, 
             len(get_filterlist_of_all_RMG_families())), bool)
         if self.trimolecular:
-            self.trimolecularThreshold = numpy.zeros((self.numCoreSpecies, self.numCoreSpecies, self.numCoreSpecies),
-                                                     bool)
+            self.trimolecularThreshold = numpy.zeros((self.numCoreSpecies, self.numCoreSpecies,
+                self.numCoreSpecies,len(get_filterlist_of_all_RMG_families())), bool)
 
         surfaceSpecies,surfaceReactions = self.initialize_surface(coreSpecies,coreReactions,surfaceSpecies,surfaceReactions)
         
@@ -473,10 +473,11 @@ cdef class ReactionSystem(DASx):
             for i in xrange(numCoreSpecies):
                 for j in xrange(i, numCoreSpecies):
                     for k in xrange(j, numCoreSpecies):
-                        if (self.coreSpeciesConcentrations[i] > 0
-                                and self.coreSpeciesConcentrations[j] > 0
-                                and self.coreSpeciesConcentrations[k] > 0):
-                            self.trimolecularThreshold[i,j,k] = True
+                        for l in xrange(NUMBER_RMG_FAMILIES):
+                            if (self.coreSpeciesConcentrations[i] > 0
+                                    and self.coreSpeciesConcentrations[j] > 0
+                                    and self.coreSpeciesConcentrations[k] > 0):
+                                self.trimolecularThreshold[i,j,k,l] = True
 
     def set_initial_derivative(self):
         """
@@ -617,9 +618,9 @@ cdef class ReactionSystem(DASx):
         cdef numpy.ndarray[numpy.float64_t,ndim=1] surfaceTotalDivAccumNums, surfaceSpeciesRateRatios
         cdef numpy.ndarray[numpy.float64_t, ndim=1] forwardRateCoefficients, coreSpeciesConcentrations
         cdef double prevTime, totalMoles, c, volume, RTP, maxCharRate, BR, RR
-        cdef double trimolecularThresholdVal
         cdef numpy.ndarray[numpy.float64_t,ndim=1] unimolecularThresholdVal 
         cdef numpy.ndarray[numpy.float64_t,ndim=1] bimolecularThresholdVal 
+        cdef numpy.ndarray[numpy.float64_t,ndim=1] trimolecularThresholdVal
         cdef bool useDynamicsTemp, firstTime, useDynamics, terminateAtMaxObjects, schanged
         cdef numpy.ndarray[numpy.float64_t, ndim=1] edgeReactionRates
         cdef double reactionRate, production, consumption
@@ -1005,7 +1006,10 @@ cdef class ReactionSystem(DASx):
                 for i in xrange(len(bimolecularThresholdRateConstant)):
                     bimolecularThresholdVal[i] = (toleranceMoveToCore * charRate / custom_bi_value[i])  
 
-                trimolecularThresholdVal = toleranceMoveToCore * charRate / trimolecularThresholdRateConstant
+                trimolecularThresholdVal = numpy.zeros(len(trimolecularThresholdRateConstant))
+                custom_tri_value = list(trimolecularThresholdRateConstant.values())
+                for i in xrange(len(trimolecularThresholdRateConstant)):
+                    trimolecularThresholdVal[i] = (toleranceMoveToCore * charRate / custom_tri_value[i])
 
                 for i in xrange(numCoreSpecies):
                     for k in xrange(len(unimolecularThresholdVal)):
@@ -1023,12 +1027,13 @@ cdef class ReactionSystem(DASx):
                     for i in xrange(numCoreSpecies):
                         for j in xrange(i, numCoreSpecies):
                             for k in xrange(j, numCoreSpecies):
-                                if not trimolecularThreshold[i,j,k]:
-                                    if (coreSpeciesConcentrations[i]*
-                                        coreSpeciesConcentrations[j]*
-                                        coreSpeciesConcentrations[k]
-                                            > trimolecularThresholdVal):
-                                        trimolecularThreshold[i,j,k] = True
+                                for l in xrange(len(trimolecularThresholdVal)):
+                                    if not trimolecularThreshold[i,j,k,l]:
+                                        if (coreSpeciesConcentrations[i]*
+                                            coreSpeciesConcentrations[j]*
+                                            coreSpeciesConcentrations[k]
+                                                > trimolecularThresholdVal[l]):
+                                            trimolecularThreshold[i,j,k,l] = True
             
             
             ###############################################################################

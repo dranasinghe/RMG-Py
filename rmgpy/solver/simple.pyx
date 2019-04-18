@@ -683,7 +683,7 @@ cdef class SimpleReactor(ReactionSystem):
         # orders of magnitude smaller (accounting for the unit
         # conversion from m^3/mol/s to m^6/mol^2/s) based on
         # extending the Smoluchowski equation to three molecules
-        trimolecular_threshold_rate_constant = 1e8 / 1e3
+        trimolecular_threshold_rate_constant = [i * 1e-3 for i in bimolecular_threshold_rate_constant]
         return (unimolecular_threshold_rate_constant,
                 bimolecular_threshold_rate_constant,
                 trimolecular_threshold_rate_constant)

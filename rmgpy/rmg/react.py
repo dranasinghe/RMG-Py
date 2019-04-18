@@ -142,10 +142,11 @@ def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact
         for i in xrange(numOldCoreSpecies):
             for j in xrange(i, numOldCoreSpecies):
                 for k in xrange(j, numOldCoreSpecies):
-                    # Find reactions involving the species that are trimolecular
-                    if trimolecularReact[i,j,k]:
-                        if coreSpcList[i].reactive and coreSpcList[j].reactive and coreSpcList[k].reactive:
-                            spcTuples.append((coreSpcList[i], coreSpcList[j], coreSpcList[k]))
+                    for l, family in enumerate (all_families):
+                        # Find reactions involving the species that are trimolecular
+                        if trimolecularReact[i,j,k,l]:
+                            if coreSpcList[i].reactive and coreSpcList[j].reactive and coreSpcList[k].reactive:
+                                spcTuples.append(((coreSpcList[i], coreSpcList[j], coreSpcList[k]), family))
 
     rxns = list(react(*spcTuples))
     return rxns
