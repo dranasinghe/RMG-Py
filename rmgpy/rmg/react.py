@@ -122,31 +122,58 @@ def reactAll(coreSpcList, numOldCoreSpecies, unimolecularReact, bimolecularReact
     from rmgpy.solver.simple import get_filterlist_of_all_RMG_families
     all_families = get_filterlist_of_all_RMG_families()
 
+    # Only employ family splitting for reactants that have a larger number than min_atoms
+    min_atoms = 10
+
     spcTuples = []
     for i in xrange (numOldCoreSpecies):
+        fam_split_list = []
         for k, family in enumerate (all_families):
             # Find reactions involving the species that are unimolecular
             if unimolecularReact[i,k] and coreSpcList[i].reactive:
+                if any([len(coreSpcList[i].molecule[0].atoms) > min_atoms]):
                     spcTuples.append(((coreSpcList[i],), family))
+                else:
+                    # Collect a list of families to react in same call for map
+                    fam_split_list.append(family)
+        if fam_split_list:
+            spcTuples.append(((coreSpcList[i],), fam_split_list))
 
     for i in xrange(numOldCoreSpecies):
         for j in xrange(i, numOldCoreSpecies):
+            fam_split_list = []
             for k, family in enumerate (all_families):
                 # Find reactions involving the species that are bimolecular
                 # This includes a species reacting with itself (if its own concentration is high enough)
 	        if bimolecularReact[i,j,k]:
                     if coreSpcList[i].reactive and coreSpcList[j].reactive:
-                        spcTuples.append(((coreSpcList[i], coreSpcList[j]), family))
+                        if any([len(coreSpcList[i].molecule[0].atoms) > min_atoms]) or any(
+                                [len(coreSpcList[j].molecule[0].atoms) > min_atoms]):
+                            spcTuples.append(((coreSpcList[i], coreSpcList[j]), family))
+                        else:
+                            # Collect a list of families to react in same call for map
+                            fam_split_list.append(family)
+            if fam_split_list:
+                spcTuples.append(((coreSpcList[i], coreSpcList[j]), fam_split_list))
 
     if trimolecularReact is not None:
         for i in xrange(numOldCoreSpecies):
             for j in xrange(i, numOldCoreSpecies):
                 for k in xrange(j, numOldCoreSpecies):
+                    fam_split_list = []
                     for l, family in enumerate (all_families):
                         # Find reactions involving the species that are trimolecular
                         if trimolecularReact[i,j,k,l]:
                             if coreSpcList[i].reactive and coreSpcList[j].reactive and coreSpcList[k].reactive:
-                                spcTuples.append(((coreSpcList[i], coreSpcList[j], coreSpcList[k]), family))
+                                if any([len(coreSpcList[i].molecule[0].atoms) > min_atoms]) or any(
+                                        [len(coreSpcList[j].molecule[0].atoms) > min_atoms]) or any(
+                                        [len(coreSpcList[k].molecule[0].atoms) > min_atoms]):
+                                            spcTuples.append(((coreSpcList[i], coreSpcList[j], coreSpcList[k]), family))
+                                else:
+                                    # Collect a list of families to react in same call for map
+                                    fam_split_list.append(family)
+                    if fam_split_list:
+                        spcTuples.append(((coreSpcList[i], coreSpcList[j], coreSpcList[k]), fam_split_list))
 
     rxns = list(react(*spcTuples))
     return rxns
