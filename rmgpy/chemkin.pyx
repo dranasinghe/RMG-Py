@@ -1524,7 +1524,7 @@ def writeReactionString(reaction, javaLibrary = False, use_label = False):
             reaction_string = ' + '.join([reactant.label for reactant in reaction.reactants])
         else:
             reaction_string = ' + '.join([getSpeciesIdentifier(reactant) for reactant in reaction.reactants])
-        reaction_string += ' => ' if not reaction.reversible else ' = '
+        reaction_string += '<=>' if reaction.reversible else '=>'
         if use_label:
             reaction_string += ' + '.join([product.label for product in reaction.products])
         else:
@@ -1574,7 +1574,7 @@ def writeReactionString(reaction, javaLibrary = False, use_label = False):
         else:
             reaction_string = ' + '.join([getSpeciesIdentifier(reactant) for reactant in reaction.reactants])
         reaction_string += thirdBody
-        reaction_string += '=' if reaction.reversible else '=>'
+        reaction_string += '<=>' if reaction.reversible else '=>'
         if use_label:
             reaction_string += ' + '.join([product.label for product in reaction.products])
         else:
