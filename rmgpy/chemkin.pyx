@@ -1681,7 +1681,8 @@ def writeKineticsEntry(reaction, speciesList, verbose = True, javaLibrary = Fals
     kinetics = reaction.kinetics
     numReactants = len(reaction.reactants)
     reaction_string = writeReactionString(reaction, javaLibrary, use_label = use_label)
-    
+    if len(reaction_string) > 52:
+        string += '! This reaction has length {0} which is {1} longer than Chemkin allows.\n! Consider shortening species names to run chemkin.'.format(len(reaction_string), len(reaction_string) - 52)
     string += '{0!s:<51} '.format(reaction_string)
 
     if isinstance(kinetics, _kinetics.StickingCoefficient):
