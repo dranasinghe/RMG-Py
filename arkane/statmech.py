@@ -181,7 +181,6 @@ class StatMechJob(object):
         self.applyAtomEnergyCorrections = True
         self.applyBondEnergyCorrections = True
         self.atomEnergies = None
-        self.supporting_info = [self.species.label]
         self.bonds = None
         self.arkane_species = ArkaneSpecies(species=species)
 
@@ -368,12 +367,6 @@ class StatMechJob(object):
                                                                     spinMultiplicity=spinMultiplicity,
                                                                     opticalIsomers=opticalIsomers,
                                                                     label=self.species.label)
-        for mode in conformer.modes:
-            if isinstance(mode, (LinearRotor, NonlinearRotor)):
-                self.supporting_info.append(mode)
-                break
-        if unscaled_frequencies:
-            self.supporting_info.append(unscaled_frequencies)
 
         if conformer.spinMultiplicity == 0:
             raise ValueError("Could not read spin multiplicity from log file {0},\n"
@@ -408,7 +401,7 @@ class StatMechJob(object):
                 E0 = E0 * constants.E_h * constants.Na  # Hartree/particle to J/mol
             if not self.applyAtomEnergyCorrections:
                 logging.warning('Atom corrections are not being used. Do not trust energies and thermo.')
-            E0 = applyEnergyCorrections(E0,
+            E0_energy_corrected = applyEnergyCorrections(E0,
                                         self.modelChemistry,
                                         atoms,
                                         self.bonds,
@@ -420,9 +413,9 @@ class StatMechJob(object):
             else:
                 # Monoatomic species don't have frequencies
                 ZPE = 0.0
-            logging.debug('Corrected minimum energy is {0} J/mol'.format(E0))
+            logging.debug('Corrected minimum energy is {0} J/mol'.format(E0_energy_corrected))
             # The E0_withZPE at this stage contains the ZPE
-            E0_withZPE = E0 + ZPE
+            E0_withZPE = E0_energy_corrected + ZPE
 
             logging.debug('         Scaling factor used = {0:g}'.format(self.frequencyScaleFactor))
             logging.debug('         ZPE (0 K) = {0:g} kcal/mol'.format(ZPE / 4184.))
@@ -434,7 +427,6 @@ class StatMechJob(object):
         if is_ts:
             neg_freq = statmechLog.loadNegativeFrequency()
             self.species.frequency = (neg_freq * self.frequencyScaleFactor, "cm^-1")
-            self.supporting_info.append(neg_freq)
 
         # Read and fit the 1D hindered rotors if applicable
         # If rotors are found, the vibrational frequencies are also
@@ -551,6 +543,37 @@ class StatMechJob(object):
             if isinstance(mode, HarmonicOscillator):
                 mode.frequencies = (frequencies * self.frequencyScaleFactor, "cm^-1")
 
+        ##save supporting information for calculation
+        self.supporting_info = [self.species.label]
+        symmetry_read, optical_isomers_read, point_group_read = statmechLog.get_symmetry_properties()
+        self.supporting_info.append(externalSymmetry if externalSymmetry else symmetry_read)
+        self.supporting_info.append(opticalIsomers if opticalIsomers else optical_isomers_read)
+        self.supporting_info.append(point_group_read)
+        for mode in conformer.modes:
+            if isinstance(mode, (LinearRotor, NonlinearRotor)):
+                self.supporting_info.append(mode)
+                break
+        else:
+            self.supporting_info.append(None)
+        if unscaled_frequencies:
+            self.supporting_info.append(unscaled_frequencies)
+        else:
+            self.supporting_info.append(None)
+        if is_ts:
+            self.supporting_info.append(neg_freq)
+        else:
+            self.supporting_info.append(None)
+        self.supporting_info.append(E0)
+        self.supporting_info.append(E0_energy_corrected)
+        self.supporting_info.append(E0_withZPE)
+        self.supporting_info.append(list(map(lambda x: symbol_by_number[x],number))) #atom symbols
+        self.supporting_info.append(coordinates)
+        try:
+            t1d = energyLog.get_T1_diagnostic()
+        except (NotImplementedError, AttributeError):
+            t1d = None
+        self.supporting_info.append(t1d)
+        #save conformer
         self.species.conformer = conformer
 
     def write_output(self, output_directory):
