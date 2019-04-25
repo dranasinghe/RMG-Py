@@ -304,10 +304,8 @@ class Arkane:
         # run kinetics and pdep jobs (also writes reaction blocks to Chemkin file)
         for job in self.jobList:
             if isinstance(job, KineticsJob):
-                job.execute(outputFile=outputFile, plot=self.plot)
-            elif isinstance(job, PressureDependenceJob) and not any([isinstance(job, ExplorerJob) for job in
-                                                                     self.jobList]):
-                # if there is an explorer job the pdep job will be run in the explorer job
+                job.execute(output_directory=self.outputDirectory, plot=self.plot)
+            elif isinstance(job, PressureDependenceJob) and not any([isinstance(job, ExplorerJob) for job in self.jobList]): #if there is an explorer job the pdep job will be run in the explorer job
                 if job.network is None:
                     raise InputError(
                         'No network matched the label of the pressureDependence block and there is no explorer block '
