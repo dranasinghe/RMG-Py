@@ -164,7 +164,7 @@ class ExplorerJob(object):
                         flags_tmp[i,k] = flag 
             else:
                 flags_tmp = None
-            biflags = np.zeros((len(reaction_model.core.species),len(reaction_model.core.species), len(all_families)))
+            biflags = np.zeros((len(reaction_model.core.species),len(reaction_model.core.species), len(all_families)), bool)
         elif len(self.source) == 2:
             flags = np.array([False for s in reaction_model.core.species])
             if len(flags) is not 0:
@@ -174,12 +174,10 @@ class ExplorerJob(object):
                         flags_tmp[i,k] = flag 
             else:
                 flags_tmp = None
-            biflags = np.array([[False for i in xrange(len(reaction_model.core.species))] 
-                for j in xrange(len(reaction_model.core.species))
-                for k in xrange(len(all_families))])
-            biflags[reaction_model.core.species.index(self.source[0]),
-                reaction_model.core.species.index(self.source[1]),
-                for k in xrange(len(all_families))] = True
+            biflags = np.full((len(reaction_model.core.species),len(reaction_model.core.species), len(all_families)), False, bool)
+            for k in xrange(len(all_families)):
+                biflags[reaction_model.core.species.index(self.source[0]),
+                    reaction_model.core.species.index(self.source[1]), k] = True
         else:
             raise ValueError("Reactant channels with greater than 2 reactants not supported")
 
@@ -242,12 +240,28 @@ class ExplorerJob(object):
                             else:
                                 logging.info('adding new isomer {0} to network'.format(spc))
                                 flags = np.array([s.molecule[0].getFormula()==form for s in reaction_model.core.species])
-                                reaction_model.enlarge((network,spc),reactEdge=False,unimolecularReact=flags,
-                                                  bimolecularReact=np.zeros((len(reaction_model.core.species),len(reaction_model.core.species))))
+                                if len(flags) is not 0:
+                                    flags_tmp = np.zeros((len(flags),len(all_families)), bool)
+                                    for i,flag in enumerate (flags):
+                                        for k,family in enumerate (all_families):
+                                            flags_tmp[i,k] = flag
+                                else:
+                                    flags_tmp = None
+                                reaction_model.enlarge((network,spc),reactEdge=False,unimolecularReact=flags_tmp,
+                                                  bimolecularReact=np.zeros((len(reaction_model.core.species),
+                                                      len(reaction_model.core.species), len(all_families))))
 
                                 flags = np.array([s.molecule[0].getFormula()==form for s in reaction_model.core.species])
-                                reaction_model.enlarge(reactEdge=True,unimolecularReact=flags,
-                                                  bimolecularReact=np.zeros((len(reaction_model.core.species),len(reaction_model.core.species))))
+                                if len(flags) is not 0:
+                                    flags_tmp = np.zeros((len(flags),len(all_families)), bool)
+                                    for i,flag in enumerate (flags):
+                                        for k,family in enumerate (all_families):
+                                            flags_tmp[i,k] = flag
+                                else:
+                                    flags_tmp = None
+                                reaction_model.enlarge(reactEdge=True,unimolecularReact=flags_tmp,
+                                                  bimolecularReact=np.zeros((len(reaction_model.core.species),
+                                                  len(reaction_model.core.species), len(all_families))))
         for network in self.networks:
             rmRxns = []
             for rxn in network.pathReactions:  # remove reactions with forbidden species
@@ -267,56 +281,8 @@ class ExplorerJob(object):
                         if name.split('_')[-1].split('.')[0] != str(len(network.isomers)):
                             os.remove(os.path.join(path,name))
                         else:
-<<<<<<< HEAD
                             os.rename(os.path.join(path,name),os.path.join(path,'network_full{}.py'.format(self.networks.index(network))))
 
-=======
-                            logging.info('adding new isomer {0} to network'.format(spc))
-                            flags = np.array([s.molecule[0].getFormula()==form for s in reaction_model.core.species])
-                            if len(flags) is not 0:
-                                flags_tmp = np.zeros((len(flags),len(all_families)), bool)
-                                for i,flag in enumerate (flags):
-                                    for k,family in enumerate (all_families):
-                                        flags_tmp[i,k] = flag 
-                            else:
-                                flags_tmp = None
-                            reaction_model.enlarge((network,spc),reactEdge=False,unimolecularReact=flags_tmp,
-                                              bimolecularReact=np.zeros((len(reaction_model.core.species),
-                                                  len(reaction_model.core.species), len(all_families))))
-                        
-                            flags = np.array([s.molecule[0].getFormula()==form for s in reaction_model.core.species])
-                            if len(flags) is not 0:
-                                flags_tmp = np.zeros((len(flags),len(all_families)), bool)
-                                for i,flag in enumerate (flags):
-                                    for k,family in enumerate (all_families):
-                                        flags_tmp[i,k] = flag
-                            else:
-                                flags_tmp = None
-                            reaction_model.enlarge(reactEdge=True,unimolecularReact=flags_tmp,
-                                              bimolecularReact=np.zeros((len(reaction_model.core.species),
-                                                  len(reaction_model.core.species),len(all_families))))
-        
-        rmRxns = []               
-        for rxn in network.pathReactions:  # remove reactions with forbidden species
-            for r in rxn.reactants+rxn.products:
-                if forbiddenStructures.isMoleculeForbidden(r.molecule[0]):
-                    rmRxns.append(rxn)
-        
-        for rxn in rmRxns:
-            logging.info('Removing forbidden reaction: {0}'.format(rxn))
-            network.pathReactions.remove(rxn)
-            
-        # clean up output files
-        if outputFile is not None:
-            path = os.path.join(reaction_model.pressureDependence.outputFile,'pdep')
-            for name in os.listdir(path):
-                if name.endswith('.py') and '_' in name:
-                    if name.split('_')[-1].split('.')[0] != str(len(network.isomers)):
-                        os.remove(os.path.join(path,name))
-                    else:
-                        os.rename(os.path.join(path,name),os.path.join(path,'network_full.py'))    
-        
->>>>>>> 495ee418b... Custom filter criteria for each reaction family.
         warns = []
 
         for rxn in jobRxns:
