@@ -408,3 +408,18 @@ class MolproLog(Log):
         Rotor scans are not implemented in Molpro
         """
         raise NotImplementedError('Rotor scans not implemented in Molpro')
+
+    def get_T1_diagnostic(self):
+        """
+        Returns the T1 diagnostic from output log.
+        If multiple occur, returns the last occurance
+        """
+        with open(self.path) as f:
+            log = f.read().splitlines()
+
+        for line in reversed(log):
+            if 'T1 diagnostic:  ' in line:
+                items = line.split()
+                return float(items[-1])
+        raise ValueError('Unable to find T1 diagnostic in energy file:{}'.format(self.path))
+
