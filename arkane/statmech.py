@@ -68,6 +68,9 @@ class ScanLog(object):
     """
     Represent a text file containing a table of angles and corresponding
     scan energies.
+
+    Deprecated since the original Gaussian and Qchem scan logs are readable
+    with Arkane. Will be removed on or after RMG version 2.5
     """
 
     angleFactors = {
