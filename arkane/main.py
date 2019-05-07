@@ -316,9 +316,9 @@ class Arkane:
             hr_file = os.path.join(self.outputDirectory,'hindered_rotor_scan_data.csv')
             with open(hr_file, 'wb') as csvfile:
                  writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                 writer.writerow(['species','rotor_number','symmetry', 'spacing (radians)', ] + ['energy (cal/mol) {}'.format(i) for i in range(72)])
+                 writer.writerow(['species','rotor_number','symmetry', 'spacing (radians)', 'pivot_atoms','frozen_atoms'] + ['energy (cal/mol) {}'.format(i) for i in range(72)])
                  for row in hindered_rotor_info:
-                     writer.writerow([row[0], row[1], row[2], row[3][1]] + [a for a in row[4]])
+                     writer.writerow([row[0], row[1], row[2], row[3][1],row[5],row[6]] + [a for a in row[4]])
         # run kinetics and pdep jobs (also writes reaction blocks to Chemkin file)
         for job in self.jobList:
             if isinstance(job, KineticsJob):
