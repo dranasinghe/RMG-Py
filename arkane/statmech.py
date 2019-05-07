@@ -198,6 +198,14 @@ class StatMechJob(object):
                 self.write_output(output_directory)
             except Exception as e:
                 logging.warning("Could not write statmech outputfile due to error: ".format(e))
+            if hasattr(self,'hindered_rotor_plots'):
+                try:
+                    hr_dir = os.path.join(output_directory,'plots')
+                    if not os.path.exists(hr_dir):
+                        os.mkdir(hr_dir)
+                    self.save_hindered_rotor_figures(hr_dir)
+                except Exception as e:
+                    logging.warning("Could not save hindered rotor scans due to error: {}".format(e))
         logging.debug('Finished statmech job for species {0}.'.format(self.species))
         logging.debug(repr(self.species))
 
@@ -524,7 +532,7 @@ class StatMechJob(object):
                         conformer.modes.append(rotor)
                         if plot:
                             try:
-                                self.plotHinderedRotor(angle, v_list, cosineRotor, fourierRotor, rotor, rotorCount, directory)
+                                self.create_hindered_rotor_figure(angle, v_list, cosineRotor, fourierRotor, rotor, rotorCount)
                             except Exception as e:
                                 logging.warning("Could not plot hindered rotor graph due to error: {0}".format(e))
 
@@ -623,13 +631,16 @@ class StatMechJob(object):
         f.write('{0}\n\n'.format(prettify(result)))
         f.close()
 
-    def plotHinderedRotor(self, angle, v_list, cosineRotor, fourierRotor, rotor, rotorIndex, directory):
+    def create_hindered_rotor_figure(self, angle, v_list, cosineRotor, fourierRotor, rotor, rotorIndex):
         """
         Plot the potential for the rotor, along with its cosine and Fourier
-        series potential fits. The plot is saved to a set of files of the form
-        ``hindered_rotor_1.pdf``.
+        series potential fits, and save it in the `hindered_rotor_plots` attribute.
         """
-        import pylab
+        try:
+            import pylab
+        except:
+            logging.warning("Unable to import pylab. not generating hindered rotor figures")
+            return
         phi = np.arange(0, 6.3, 0.02, np.float64)
         Vlist_cosine = np.zeros_like(phi)
         Vlist_fourier = np.zeros_like(phi)
@@ -655,8 +666,19 @@ class StatMechJob(object):
         axes.set_xticklabels(
             ['$0$', '$\pi/4$', '$\pi/2$', '$3\pi/4$', '$\pi$', '$5\pi/4$', '$3\pi/2$', '$7\pi/4$', '$2\pi$'])
 
-        pylab.savefig(os.path.join(directory, '{0}_rotor_{1:d}.pdf'.format(self.species.label, rotorIndex + 1)))
-        pylab.close()
+        if hasattr(self, 'hindered_rotor_plots'):
+            self.hindered_rotor_plots.append((fig,rotorIndex))
+        else:
+            self.hindered_rotor_plots = [(fig, rotorIndex)]
+
+    def save_hindered_rotor_figures(self, directory):
+        """
+        Save hindered rotor plots as set of files of the form
+        ``rotor_[species_label]_0.pdf`` in the specified directory
+        """
+        if hasattr(self, 'hindered_rotor_plots'):
+            for fig, rotorIndex in self.hindered_rotor_plots:
+                fig.savefig(os.path.join(directory, 'rotor_{0}_{1:d}.pdf'.format(self.species.label, rotorIndex)))
 
 
 ################################################################################
