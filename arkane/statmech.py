@@ -1862,6 +1862,13 @@ class HinderedRotorClassicalND(Mode):
         """
         return projectRotors(self.conformer, self.F, [(self.calcPath,self.pivots,self.tops,self.sigmas,self.semiclassical)], self.isLinear, self.isTS,getProjectedOutFreqs=True)
 
+    def run(self):
+        """
+        ready object for t property
+        """
+        self.readScan()
+        self.fit()
+
 def fill360s(vec):
     """
     fill in periodic scan points
