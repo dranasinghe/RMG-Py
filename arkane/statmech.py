@@ -40,6 +40,7 @@ import numpy as np
 import logging
 import subprocess
 import os
+from scipy import interpolate
 
 from rdkit.Chem import GetPeriodicTable
 
@@ -1778,3 +1779,31 @@ class HinderedRotorClassicalND(Mode):
                         self.tops[k],option=3) for k in xrange(len(self.pivots))])**0.5 for i in xrange(len(self.Es))]
         else:
             raise IOError("path {} is not a file or a directory".format(self.calcPath))
+
+    def fit(self):
+        """
+        fit scan to an appropriate spline
+        calculate a set of partition function values at different temperatures and fit a spline to the
+        partition function values
+        generate splines for the first and second derivatives of the partition function
+        """
+        N = len(self.pivots)
+        if N > 2:
+            self.V = interpolate.LinearNDInterpolator(self.phis,self.Es)
+            self.rootD = interpolate.LinearNDInterpolator(self.phis,self.rootDs)
+        elif N == 2:
+            self.V = interpolate.SmoothBivariateSpline(self.phis[:,0],self.phis[:,1],self.Es)
+            self.rootD = interpolate.SmoothBivariateSpline(self.phis[:,0],self.phis[:,1],self.rootDs)
+        else:
+            self.V = interpolate.CubicSpline(self.phis,self.Es)
+            self.rootD = interpolate.CubicSpline(self.phis,self.rootDs)
+
+        Tlist = np.linspace(10.0, 3001.0, num=20, dtype=np.float64)
+
+        Qs = []
+        for T in Tlist:
+            Qs.append(self.calcPartitionFunction(T))
+
+        self.Q = interpolate.CubicSpline(Tlist,Qs)
+        self.dQdT = self.Q.derivative()
+        self.d2QdT2 = self.dQdT.derivative()
