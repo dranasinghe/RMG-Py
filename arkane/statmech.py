@@ -1837,3 +1837,28 @@ class HinderedRotorClassicalND(Mode):
         """
         return projectRotors(self.conformer, self.F, [(self.calcPath,self.pivots,self.tops,self.sigmas,self.semiclassical)], self.isLinear, self.isTS,getProjectedOutFreqs=True)
 
+def fill360s(vec):
+    """
+    fill in periodic scan points
+    for example [0.0,1.0,0.0] => [[0.0,1.0,0.0],[360.0,1.0,0.0],[360.0,1.0,360.0],[0.0,1.0,360.0]]
+    """
+    if not 0.0 in vec:
+        return [vec]
+    vecs = [vec]
+    breakout = True
+    while breakout:
+        breakout = False
+        for vec in vecs:
+            for i,v in enumerate(vec):
+                if v == 0.0:
+                    nvec = vec[:]
+                    nvec[i] = 360.0
+                    if nvec not in vecs:
+                        vecs.append(nvec)
+                        breakout = True
+                if breakout:
+                    break
+            if breakout:
+                break
+
+    return [np.array(x) for x in vecs]
