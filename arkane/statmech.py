@@ -910,7 +910,7 @@ def determine_qm_software(fullpath):
     return software_log
 
 
-def projectRotors(conformer, F, rotors, linear, is_ts):
+def projectRotors(conformer, F, rotors, linear, is_ts, getProjectedOutFreqs=False):
     """
     For a given `conformer` with associated force constant matrix `F`, lists of
     rotor information `rotors`, `pivots`, and `top1`, and the linearity of the
@@ -1131,6 +1131,15 @@ def projectRotors(conformer, F, rotors, linear, is_ts):
             for k in range(3*Natoms):
                 Dint[k,j]-=proj*Dint[k,i]
 
+    #calculate the frequencies correspondinng to the internal rotors
+    intProj = np.dot(Fm,Dint)
+    kmus = np.array([np.linalg.norm(intProj[:,i]) for i in xrange(intProj.shape[1])])
+    intRotorFreqs = np.sqrt(kmus) / (2.0 * math.pi * constants.c * 100.0)
+
+    if getProjectedOutFreqs:
+        return intRotorFreqs
+
+    #Do the projection
     Dintproj=np.dot(Vmw.T,Dint)
     Proj = np.dot(Dint, Dint.T)
     I = np.identity(Natoms*3, np.float64)
