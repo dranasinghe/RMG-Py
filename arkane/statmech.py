@@ -1705,3 +1705,76 @@ class HinderedRotorClassicalND(Mode):
         self.Es = []
         self.atnums = []
 
+
+    def readScan(self):
+        """
+        Read quantum optimization job files at self.calcPath to determine
+        vectors of angles self.phis, xyz coordinates (self.xyzs)
+        energies (self.Es) and atom numbers (self.atnums) for each point
+        """
+        if os.path.isdir(self.calcPath):
+            massdict = {el.number:el.mass for el in elementList if el.isotope == -1}
+            N = len(self.pivots)
+            phis = []
+            xyzs = []
+            Es = []
+            atnums = []
+            for f in os.listdir(self.calcPath):
+                name,idf = '.'.join(f.split('.')[:-1]),f.split('.')[-1]
+                if idf != 'out':
+                    continue
+                outs = name.split('_')
+                phivals = [float(x) for x in outs[-N:]]
+                phivals = fill360s(phivals)
+
+                fpath = os.path.join(self.calcPath,f)
+                lg = determine_qm_software(fpath)
+                E = lg.loadEnergy()
+                xyz,atnum,_ = lg.loadGeometry()
+
+                for phival in phivals:
+                    phis.append(np.array(phival))
+                    Es.append(lg.loadEnergy())
+                    xyzs.append(xyz)
+                    atnums.append(atnum)
+                    if False:
+                        phis.append(2.0*np.pi-np.array(phival)[::-1])
+                        Es.append(lg.loadEnergy())
+                        xyzs.append(xyz)
+                        atnums.append(atnum)
+
+            self.xyzs = np.array(xyzs)
+
+            self.Es = np.array(Es)
+            self.E0 = self.Es.min()
+            self.Es -= self.E0
+
+            self.atnums = np.array(atnums)
+
+            self.phis = np.array(phis)
+            self.phis *= np.pi/180.0
+
+            inds = None
+            if len(self.phis[0]) == 1:
+                self.phis = np.array([phi[0] for phi in self.phis])
+                inds = np.argsort(self.phis)
+
+            self.confs = [Conformer(number=self.atnums[k],coordinates=(self.xyzs[k],"angstrom"),
+                               mass=(np.array([massdict[x] for x in self.atnums[k]]),"amu")) for k in xrange(len(self.xyzs))]
+
+            self.rootDs = np.array([np.prod([conf.getInternalReducedMomentOfInertia(self.pivots[k],
+                        self.tops[k],option=3) for k in xrange(len(self.pivots))])**0.5 for conf in self.confs])
+            if inds is not None:
+                self.rootDs = self.rootDs[inds]
+                self.phis = self.phis[inds]
+                self.Es = self.Es[inds]
+                self.atnums = self.atnums[inds]
+                self.xyzs = self.xyzs[inds]
+        elif os.path.isfile(self.calcPath): #reading a 1-D scan file, assume internal reduced moment of inertia is constant
+            lg = determine_qm_software(self.calcPath)
+            self.Es,self.phis = lg.loadScanEnergies()
+            self.atnums = [self.conformer.number for i in xrange(len(self.Es))]
+            self.rootDs = [np.prod([self.conformer.getInternalReducedMomentOfInertia(self.pivots[k],
+                        self.tops[k],option=3) for k in xrange(len(self.pivots))])**0.5 for i in xrange(len(self.Es))]
+        else:
+            raise IOError("path {} is not a file or a directory".format(self.calcPath))
