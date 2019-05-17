@@ -168,6 +168,9 @@ def freeRotor(pivots,top,symmetry):
 def hinderedRotor2D(scandir,pivots1,top1,symmetry1,pivots2,top2,symmetry2,symmetry='none'):
     return [scandir,pivots1,top1,symmetry1,pivots2,top2,symmetry2,symmetry]
 
+def hinderedRotorClassicalND(calcPath,pivots,tops,sigmas,semiclassical):
+    return [calcPath,pivots,tops,sigmas,semiclassical]
+
 class StatMechJob(object):
     """
     A representation of a Arkane statistical mechanics job. This job is used
@@ -236,6 +239,7 @@ class StatMechJob(object):
             'HinderedRotor': hinderedRotor,
             'FreeRotor': freeRotor,
             'HinderedRotor2D' : hinderedRotor2D,
+            'HinderedRotorClassicalND': hinderedRotorClassicalND,
             # File formats
             'GaussianLog': GaussianLog,
             'QChemLog': QChemLog,
@@ -465,6 +469,13 @@ class StatMechJob(object):
                     rotor.run()
                     conformer.modes.append(rotor)
                     rotorCount += 2
+                elif len(q) == 5 and isinstance(q[1][0],list):
+                    scandir,pivots,tops,sigmas,semiclassical = q
+                    rotor = HinderedRotorClassicalND(pivots,tops,sigmas,calcPath=scandir,conformer=conformer,F=F,
+                                                     semiclassical=semiclassical,isLinear=linear,isTS=is_ts)
+                    rotor.run()
+                    conformer.modes.append(rotor)
+                    rotorCount += len(pivots)
                 elif len(q) in [4, 5]:
                     # This is a hindered rotor
                     if len(q) == 5:
