@@ -42,6 +42,7 @@ import subprocess
 import os
 from scipy import interpolate
 from scipy import integrate as inte
+import numdifftools as nd
 
 from rdkit.Chem import GetPeriodicTable
 
@@ -1860,7 +1861,13 @@ class HinderedRotorClassicalND(Mode):
         get the frequencies corresponding to the internal rotors
         this is done by projecting their frequencies out of the force constant matrix
         """
-        return projectRotors(self.conformer, self.F, [(self.calcPath,self.pivots,self.tops,self.sigmas,self.semiclassical)], self.isLinear, self.isTS,getProjectedOutFreqs=True)
+        zs = np.zeros(len(self.pivots))
+        hes = nd.Hessian(lambda x: self.V(*x),method='forward')
+        I = self.rootD(*zs)**(2.0/len(self.pivots))*constants.Na*1e23*1.66053904e-47
+        H = hes(zs)
+        eigs = np.linalg.eigvals(H)
+        freq = np.sqrt(eigs/(I*constants.Na))/(2.0*np.pi)/(constants.c*100.0)
+        return freq
 
     def run(self):
         """
