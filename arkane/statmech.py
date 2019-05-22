@@ -181,6 +181,7 @@ class StatMechJob(object):
         self.includeHinderedRotors = True
         self.applyAtomEnergyCorrections = True
         self.applyBondEnergyCorrections = True
+        self.bondEnergyCorrectionType = 'p'
         self.atomEnergies = None
         self.supporting_info = [self.species.label]
         self.bonds = None
@@ -410,7 +411,8 @@ class StatMechJob(object):
             E0 += get_energy_correction(
                 self.modelChemistry, atoms, self.bonds, coordinates, number,
                 multiplicity=conformer.spinMultiplicity, atom_energies=self.atomEnergies,
-                apply_atom_corrections=self.applyAtomEnergyCorrections, apply_bacs=self.applyBondEnergyCorrections
+                apply_atom_corrections=self.applyAtomEnergyCorrections, apply_bacs=self.applyBondEnergyCorrections,
+                bac_type=self.bondEnergyCorrectionType
             )
 
             if len(number) > 1:
