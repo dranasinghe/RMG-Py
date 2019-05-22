@@ -114,5 +114,8 @@ def get_bac_correction(model_chemistry, bonds, coords, nums, bac_type='p', multi
     """
     if bac_type.lower() == 'p':  # Petersson-type BACs
         return pbac.get_bac_correction(model_chemistry, bonds)
+    elif bac_type.lower() == 'm':  # Melius-type BACs
+        # Return negative because the correction is subtracted in the Melius paper
+        return -mbac.get_bac_correction(model_chemistry, coords, nums, multiplicity=multiplicity)
     else:
         raise Exception('BAC type {} is not available'.format(bac_type))
