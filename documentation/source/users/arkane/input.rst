@@ -28,6 +28,7 @@ Component                   Description
 ``useHinderedRotors``       ``True`` (by default) if hindered rotors are used, ``False`` if not
 ``useAtomCorrections``      ``True`` (by default) if atom corrections are used, ``False`` if not
 ``useBondCorrections``      ``True`` if bond corrections are used, ``False`` (by default) if not
+``bondCorrectionType``      ``'p'`` for Petersson-type or ``'m'`` for Melius-type bond additivity corrections
 ``species``                 Contains parameters for non-transition states
 ``transitionState``         Contains parameters for transition state(s)
 ``reaction``                Required for performing kinetic computations
@@ -188,7 +189,12 @@ to apply atomization energy corrections (AEC) and spin orbit corrections (SOC) f
 (see `Model Chemistry`_). If not interested in accurate thermodynamics (e.g., if only using ``kinetics()``), then
 atom corrections can be turned off by setting ``useAtomCorrections`` to ``False``.
 
-The ``bond`` parameter is used to apply bond corrections (BC) for a given ``modelChemistry``.
+The ``bond`` parameter is used to apply bond corrections (BC) for a given ``modelChemistry`` if using Petersson-type
+bond additivity corrections (BACs) (``bondCorrectionType = 'p'``). When using Melius-type bond additivity corrections
+(``bondCorrectionType = 'm'``), specifying bonds is not required because the molecular connectivity is automatically
+inferred from the output of the quantum chemistry calculation. For a description of Petersson-type BACs, see
+Petersson et al., J. Chem. Phys. 1998, 109, 10570-10579. For a description of Melius-type BACs, see
+Anantharaman and Melius, J. Phys. Chem. A 2005, 109, 1734-1747.
 
 Allowed bond types for the ``bonds`` parameter are, e.g., ``'C-H'``, ``'C-C'``, ``'C=C'``, ``'N-O'``, ``'C=S'``,
 ``'O=O'``, ``'C#N'``...
