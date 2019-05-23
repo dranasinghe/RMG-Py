@@ -1485,27 +1485,8 @@ class Molecule(Graph):
                 return []
             elif element_count[element] < count:
                 return []
-        
-        subgroups = group._split()
 
-        results = []
-        for s in subgroups: #findSubgraphIsomorphisms
-            results.append(Graph.findSubgraphIsomorphisms(self,s,initialMap,saveOrder=saveOrder))
-        
-        if len(results) > 1: #if other was split we need to figure out which subgraph isomorphisms don't overlap
-            result = []
-            for maps in itertools.product(*results):
-                rDict = {r:q for m in maps for r,q in m.iteritems()}
-                L = sum([len(m) for m in maps])
-                if L == len(rDict): #L is the number of molecule atoms in the mapping, len(rDict) is the number of unique molecule atoms in the mapping, if these are different the map is invalid
-                    result.append(rDict)
-        else:
-            result = results[0]
-        
-        for i,s in enumerate(subgroups[:-1]): #fix other if we split it
-            group._merge(s)
-                
-        return result
+        return Graph.findSubgraphIsomorphisms(self,group,initialMap,saveOrder=saveOrder)
     
     def isAtomInCycle(self, atom):
         """
