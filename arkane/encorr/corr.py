@@ -129,7 +129,7 @@ def get_bac(model_chemistry, bonds, coords, nums, bac_type='p', multiplicity=1):
         return pbac.get_bac(model_chemistry, bonds)
     elif bac_type.lower() == 'm':  # Melius-type BACs
         # Return negative because the correction is subtracted in the Melius paper
-        return -mbac.get_bac_correction(model_chemistry, coords, nums, multiplicity=multiplicity)
+        return -mbac.get_bac(model_chemistry, coords, nums, multiplicity=multiplicity)
     else:
         raise BondAdditivityCorrectionError('BAC type {} is not available'.format(bac_type))
 

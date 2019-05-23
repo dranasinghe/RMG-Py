@@ -39,6 +39,7 @@ import pybel
 
 from rmgpy.molecule import Molecule, Atom, Bond, getElement
 
+from arkane.encorr.corr import BondAdditivityCorrectionError
 import arkane.encorr.data as data
 
 atom_spins = {
@@ -46,10 +47,10 @@ atom_spins = {
 }
 
 
-def get_bac_correction(model_chemistry, coords, nums, multiplicity=1, mol_corr=0.0):
+def get_bac(model_chemistry, coords, nums, multiplicity=1, mol_corr=0.0):
     """
     Given the model chemistry, molecular coordinates, atomic numbers,
-    and dictionaries of BAC parameters, return the total BAC correction
+    and dictionaries of BAC parameters, return the total BAC
     (should be SUBTRACTED from energy).
 
     Note that a molecular correction term other than 0 destroys the size
@@ -62,7 +63,9 @@ def get_bac_correction(model_chemistry, coords, nums, multiplicity=1, mol_corr=0
     try:
         params = data.mbac[model_chemistry]
     except KeyError:
-        raise Exception('Missing BAC parameters for model chemistry {}'.format(model_chemistry))
+        raise BondAdditivityCorrectionError(
+            'Missing Melius-type BAC parameters for model chemistry {}'.format(model_chemistry)
+        )
     atom_corr = params['atom_corr']
     bond_corr_length = params['bond_corr_length']
     bond_corr_neighbor = params['bond_corr_neighbor']
@@ -100,7 +103,7 @@ def get_bac_correction(model_chemistry, coords, nums, multiplicity=1, mol_corr=0
                 other_symbol = other_atom.element.symbol
                 bac_bond += bond_corr_neighbor[symbol2] + bond_corr_neighbor[other_symbol]
 
-    return (bac_mol + bac_atom + bac_bond) * 4184.0
+    return (bac_mol + bac_atom + bac_bond) * 4184.0  # Convert kcal/mol to J/mol
 
 
 def geo_to_mol(coords, nums):
@@ -117,7 +120,7 @@ def geo_to_mol(coords, nums):
         mol.fromXYZ(nums, coords)
     else:
         xyz = '{}\n\n'.format(len(nums))
-        xyz += '\n'.join('{0}  {1[0]: .10f}  {1[1]: .10f}  {1[2]: .10f}'.format(s, c) for s, c in zip(coords, nums))
+        xyz += '\n'.join('{0}  {1[0]: .10f}  {1[1]: .10f}  {1[2]: .10f}'.format(n, c) for n, c in zip(nums, coords))
         mol = pybel.readstring('xyz', xyz)
         mol = pybel_to_rmg(mol)
     return mol
