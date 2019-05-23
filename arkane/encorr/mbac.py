@@ -39,7 +39,7 @@ import pybel
 
 from rmgpy.molecule import Molecule, Atom, Bond, getElement
 
-from arkane.encorr.corr import BondAdditivityCorrectionError
+from arkane.exceptions import BondAdditivityCorrectionError
 import arkane.encorr.data as data
 
 atom_spins = {
@@ -115,7 +115,7 @@ def geo_to_mol(coords, nums):
     long bonds. Use RMG for hydrogen because Open Babel can't do it for
     mysterious reasons.
     """
-    if len(nums) == 2 and all(n == 1 for n in nums):
+    if list(nums) == [1, 1]:
         mol = Molecule()
         mol.fromXYZ(nums, coords)
     else:
