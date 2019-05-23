@@ -35,14 +35,16 @@ Petersson et al., J. Chem. Phys. 1998, 109, 10570-10579
 """
 
 import logging
+import re
 
+from arkane.encorr.corr import BondAdditivityCorrectionError
 import arkane.encorr.data as data
 
 
-def get_bac_correction(model_chemistry, bonds):
+def get_bac(model_chemistry, bonds):
     """
     Given the model_chemistry and a dictionary of bonds, return the
-    total BAC correction (should be ADDED to energy).
+    total BAC (should be ADDED to energy).
 
     The dictionary of bonds should have the following form:
 
@@ -58,16 +60,20 @@ def get_bac_correction(model_chemistry, bonds):
     try:
         params = data.pbac[model_chemistry]
     except KeyError:
-        raise Exception('Missing BAC parameters for model chemistry {}'.format(model_chemistry))
+        raise BondAdditivityCorrectionError(
+            'Missing Petersson-type BAC parameters for model chemistry {}'.format(model_chemistry)
+        )
 
     # Sum corrections
     bac = 0.0
     for symbol, count in bonds.items():
         if symbol in params:
-            bac += count * params[symbol] * 4184.0
-        elif symbol[::-1] in params:
-            bac += count * params[symbol[::-1]] * 4184.0
+            bac += count * params[symbol]
         else:
-            logging.warning('Ignored unknown bond type {0!r}.'.format(symbol))
+            symbol_flipped = ''.join(re.findall('[a-zA-Z]+|[^a-zA-Z]+', symbol)[::-1])  # Check reversed symbol
+            if symbol_flipped in params:
+                bac += count * params[symbol_flipped]
+            else:
+                logging.warning('Ignored unknown bond type {}.'.format(symbol))
 
-    return bac
+    return bac * 4184.0  # Convert kcal/mol to J/mol

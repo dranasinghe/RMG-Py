@@ -42,20 +42,31 @@ import arkane.encorr.mbac as mbac
 
 def get_energy_correction(model_chemistry, atoms, bonds, coords, nums, multiplicity=1,
                           atom_energies=None, apply_atom_corrections=True,
-                          apply_bacs=False, bac_type='p'):
+                          apply_bac=False, bac_type='p'):
     """
     Calculate a correction to the electronic energy obtained from a
     quantum chemistry calculation at a given model chemistry such that
     it is consistent with the normal gas-phase reference states.
     Optionally, correct the energy using bond additivity corrections.
+
+    model_chemistry: The model chemistry, typically specified as method/basis.
+    atoms: A dictionary of element symbols with their associated counts.
+    bonds: A dictionary of bond types (e.g., 'C=O') with their associated counts.
+    coords: A Numpy array of Cartesian molecular coordinates.
+    nums: A sequence of atomic numbers.
+    multiplicity: The spin multiplicity of the molecule.
+    atom_energies: A dictionary of element symbols with their associated atomic energies in Hartree.
+    apply_atom_corrections: Include the atom correction to the electronic energy.
+    apply_bac: Include the bond additivity correction to the electronic energy.
+    bac_type: The type of bond additivity correction to use.
     """
     model_chemistry = model_chemistry.lower()
 
     corr = 0.0
     if apply_atom_corrections:
         corr += get_atom_correction(model_chemistry, atoms, atom_energies=atom_energies)
-    if apply_bacs:
-        corr += get_bac_correction(model_chemistry, bonds, coords, nums, bac_type=bac_type, multiplicity=multiplicity)
+    if apply_bac:
+        corr += get_bac(model_chemistry, bonds, coords, nums, bac_type=bac_type, multiplicity=multiplicity)
 
     return corr
 
@@ -83,24 +94,26 @@ def get_atom_correction(model_chemistry, atoms, atom_energies=None):
         try:
             atom_energies = data.atom_energies[model_chemistry]
         except KeyError:
-            raise Exception('Missing atom energies for model chemistry {}'.format(model_chemistry))
+            raise AtomEnergyCorrectionError('Missing atom energies for model chemistry {}'.format(model_chemistry))
 
     for symbol, count in atoms.items():
         if symbol in atom_energies:
-            corr -= count * atom_energies[symbol] * 4.35974394e-18 * constants.Na
+            corr -= count * atom_energies[symbol] * 4.35974394e-18 * constants.Na  # Convert Hartree to J/mol
         else:
-            raise Exception(
-                'Unknown element "{}". Turn off atom corrections if only running a kinetics jobs '
-                'or supply a dictionary of atom energies.'.format(symbol)
+            raise AtomEnergyCorrectionError(
+                'An energy correction for element "{}" is unavailable for model chemistry "{}".'
+                ' Turn off atom corrections if only running a kinetics jobs'
+                ' or supply a dictionary of atom energies'
+                ' as `atomEnergies` in the input file.'.format(symbol, model_chemistry)
             )
 
     # Step 2: Atom energy corrections to reach gas-phase reference state
     atom_enthalpy_corrections = {symbol: data.atom_hf[symbol] - data.atom_thermal[symbol] for symbol in data.atom_hf}
     for symbol, count in atoms.items():
         if symbol in atom_enthalpy_corrections:
-            corr += count * atom_enthalpy_corrections[symbol] * 4184.0
+            corr += count * atom_enthalpy_corrections[symbol] * 4184.0  # Convert kcal/mol to J/mol
         else:
-            raise Exception(
+            raise AtomEnergyCorrectionError(
                 'Element "{}" is not yet supported in Arkane.'
                 ' To include it, add its experimental heat of formation'.format(symbol)
             )
@@ -108,14 +121,30 @@ def get_atom_correction(model_chemistry, atoms, atom_energies=None):
     return corr
 
 
-def get_bac_correction(model_chemistry, bonds, coords, nums, bac_type='p', multiplicity=1):
+def get_bac(model_chemistry, bonds, coords, nums, bac_type='p', multiplicity=1):
     """
     Calculate bond additivity correction.
     """
     if bac_type.lower() == 'p':  # Petersson-type BACs
-        return pbac.get_bac_correction(model_chemistry, bonds)
+        return pbac.get_bac(model_chemistry, bonds)
     elif bac_type.lower() == 'm':  # Melius-type BACs
         # Return negative because the correction is subtracted in the Melius paper
         return -mbac.get_bac_correction(model_chemistry, coords, nums, multiplicity=multiplicity)
     else:
-        raise Exception('BAC type {} is not available'.format(bac_type))
+        raise BondAdditivityCorrectionError('BAC type {} is not available'.format(bac_type))
+
+
+class AtomEnergyCorrectionError(Exception):
+    """
+    An exception to be raised when an error occurs while applying atom
+    energy corrections.
+    """
+    pass
+
+
+class BondAdditivityCorrectionError(Exception):
+    """
+    An exception to be raised when an error occurs while applying bond
+    additivity corrections.
+    """
+    pass

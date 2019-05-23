@@ -411,7 +411,7 @@ class StatMechJob(object):
             E0 += get_energy_correction(
                 self.modelChemistry, atoms, self.bonds, coordinates, number,
                 multiplicity=conformer.spinMultiplicity, atom_energies=self.atomEnergies,
-                apply_atom_corrections=self.applyAtomEnergyCorrections, apply_bacs=self.applyBondEnergyCorrections,
+                apply_atom_corrections=self.applyAtomEnergyCorrections, apply_bac=self.applyBondEnergyCorrections,
                 bac_type=self.bondEnergyCorrectionType
             )
 

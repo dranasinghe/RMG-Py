@@ -35,7 +35,7 @@ chemistries.
 
 # Atom energy corrections to reach gas-phase reference state
 # Experimental enthalpy of formation at 0 K, 1 bar for gas phase
-# See Gaussian thermo whitepaper at http://www.gaussian.com/g_whitepap/thermo.htm)
+# See Gaussian thermo whitepaper at http://gaussian.com/thermo/
 # Note: These values are relatively old and some improvement may be possible by using newer values
 # (particularly for carbon).
 # However, care should be taken to ensure that they are compatible with the BAC values (if BACs are used)
@@ -50,7 +50,7 @@ atom_hf = {'H': 51.63, 'He': -1.481,
            'Rb': 17.86, 'Ag': 66.61, 'Cd': 25.240, 'Sn': 70.50, 'I': 24.04, 'Xe': -1.481,
            'Cs': 16.80, 'Hg': 13.19, 'Pb': 15.17}
 
-# Thermal contribution to enthalpy Hss(298 K) - Hss(0 K) reported by Gaussian thermo whitepaper
+# Thermal contribution to enthalpy for the atoms reported by Gaussian thermo whitepaper
 # This will be subtracted from the corresponding value in atom_hf to produce an enthalpy used in calculating
 # the enthalpy of formation at 298 K
 atom_thermal = {'H': 1.01, 'He': 1.481,
@@ -234,7 +234,6 @@ atom_energies = {
         'O': -75.065397706471 + SOC['O'], 'C': -37.843634971592 + SOC['C']
     },
 
-
     'b-ccsd(t)-f12/aug-cc-pvdz': {
         'H': -0.499459066131 + SOC['H'], 'N': -54.520475581942 + SOC['N'],
         'O': -74.986992215049 + SOC['O'], 'C': -37.783294495799 + SOC['C']
@@ -326,11 +325,13 @@ atom_energies = {
         'H': -0.49982118 + SOC['H'], 'C': -37.78321274 + SOC['C'], 'N': -54.51729444 + SOC['N'],
         'O': -74.97847534 + SOC['O'], 'S': -397.6571654 + SOC['S']
     },
+
 }
 
 
 # Petersson-type bond additivity correction parameters
 pbac = {
+
     # 'S-H', 'C-S', 'C=S', 'S-S', 'O-S', 'O=S', 'O=S=O' taken from http://hdl.handle.net/1721.1/98155 (both for
     # 'CCSD(T)-F12/cc-pVDZ-F12' and 'CCSD(T)-F12/cc-pVTZ-F12')
     'ccsd(t)-f12/cc-pvdz-f12': {
