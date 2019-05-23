@@ -51,16 +51,20 @@ def get_energy_correction(model_chemistry, atoms, bonds, coords, nums, multiplic
     it is consistent with the normal gas-phase reference states.
     Optionally, correct the energy using bond additivity corrections.
 
-    model_chemistry: The model chemistry, typically specified as method/basis.
-    atoms: A dictionary of element symbols with their associated counts.
-    bonds: A dictionary of bond types (e.g., 'C=O') with their associated counts.
-    coords: A Numpy array of Cartesian molecular coordinates.
-    nums: A sequence of atomic numbers.
-    multiplicity: The spin multiplicity of the molecule.
-    atom_energies: A dictionary of element symbols with their associated atomic energies in Hartree.
-    apply_atom_corrections: Include the atom correction to the electronic energy.
-    apply_bac: Include the bond additivity correction to the electronic energy.
-    bac_type: The type of bond additivity correction to use.
+    Args:
+        model_chemistry: The model chemistry, typically specified as method/basis.
+        atoms: A dictionary of element symbols with their associated counts.
+        bonds: A dictionary of bond types (e.g., 'C=O') with their associated counts.
+        coords: A Numpy array of Cartesian molecular coordinates.
+        nums: A sequence of atomic numbers.
+        multiplicity: The spin multiplicity of the molecule.
+        atom_energies: A dictionary of element symbols with their associated atomic energies in Hartree.
+        apply_atom_corrections: Include the atom correction to the electronic energy.
+        apply_bac: Include the bond additivity correction to the electronic energy.
+        bac_type: The type of bond additivity correction to use.
+
+    Returns:
+        The correction to the electronic energy in J/mol.
     """
     model_chemistry = model_chemistry.lower()
 
