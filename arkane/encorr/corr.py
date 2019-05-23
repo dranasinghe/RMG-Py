@@ -35,6 +35,8 @@ corrections.
 
 import rmgpy.constants as constants
 
+from arkane.exceptions import AtomEnergyCorrectionError, BondAdditivityCorrectionError
+
 import arkane.encorr.data as data
 import arkane.encorr.pbac as pbac
 import arkane.encorr.mbac as mbac
@@ -132,19 +134,3 @@ def get_bac(model_chemistry, bonds, coords, nums, bac_type='p', multiplicity=1):
         return -mbac.get_bac(model_chemistry, coords, nums, multiplicity=multiplicity)
     else:
         raise BondAdditivityCorrectionError('BAC type {} is not available'.format(bac_type))
-
-
-class AtomEnergyCorrectionError(Exception):
-    """
-    An exception to be raised when an error occurs while applying atom
-    energy corrections.
-    """
-    pass
-
-
-class BondAdditivityCorrectionError(Exception):
-    """
-    An exception to be raised when an error occurs while applying bond
-    additivity corrections.
-    """
-    pass

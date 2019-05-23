@@ -29,51 +29,20 @@
 ###############################################################################
 
 """
-This module provides methods for applying Petersson-type bond additivity
-corrections (P-BAC) as described in:
-Petersson et al., J. Chem. Phys. 1998, 109, 10570-10579
+This module provides custom Exception classes for use in Arkane.
 """
 
-import logging
-import re
-
-from arkane.exceptions import BondAdditivityCorrectionError
-import arkane.encorr.data as data
-
-
-def get_bac(model_chemistry, bonds):
+class AtomEnergyCorrectionError(Exception):
     """
-    Given the model_chemistry and a dictionary of bonds, return the
-    total BAC (should be ADDED to energy).
-
-    The dictionary of bonds should have the following form:
-
-    bonds = {
-        'C-H': bac1,
-        'C-C': bac2,
-        'C=C': bac3,
-        ...
-    }
+    An exception to be raised when an error occurs while applying atom
+    energy corrections.
     """
+    pass
 
-    # Get BAC parameters
-    try:
-        params = data.pbac[model_chemistry]
-    except KeyError:
-        raise BondAdditivityCorrectionError(
-            'Missing Petersson-type BAC parameters for model chemistry {}'.format(model_chemistry)
-        )
 
-    # Sum corrections
-    bac = 0.0
-    for symbol, count in bonds.items():
-        if symbol in params:
-            bac += count * params[symbol]
-        else:
-            symbol_flipped = ''.join(re.findall('[a-zA-Z]+|[^a-zA-Z]+', symbol)[::-1])  # Check reversed symbol
-            if symbol_flipped in params:
-                bac += count * params[symbol_flipped]
-            else:
-                logging.warning('Ignored unknown bond type {}.'.format(symbol))
-
-    return bac * 4184.0  # Convert kcal/mol to J/mol
+class BondAdditivityCorrectionError(Exception):
+    """
+    An exception to be raised when an error occurs while applying bond
+    additivity corrections.
+    """
+    pass
