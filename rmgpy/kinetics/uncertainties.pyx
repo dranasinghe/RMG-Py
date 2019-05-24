@@ -63,7 +63,6 @@ cdef class RateUncertainty(object):
         if self.correlation is not None:
           s += "correlation={0!r},".format(self.correlation)
         s+= ")"
-        logging.error("Rate uncertainty")
         return s
 
     property mu:
