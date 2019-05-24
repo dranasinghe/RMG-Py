@@ -31,6 +31,7 @@ import numpy as np
 from libc.math cimport exp, log, sqrt, log10
 from rmgpy.constants import R
 from rmgpy.quantity import Quantity
+import logging
 
 """
 This module contains information related to kinetic uncertainties
@@ -54,6 +55,16 @@ cdef class RateUncertainty(object):
         self.mu = mu
         self.var = var
         self.N = N
+
+    def __repr__(self):
+        s = "RateUncertainty(mu={mu},var={var},Tref={Tref},".format(mu=self.mu,var=self.var,Tref=self.Tref)
+        if self.N is not None:
+          s += "N={0!r},".format(self.N)
+        if self.correlation is not None:
+          s += "correlation={0!r},".format(self.correlation)
+        s+= ")"
+        logging.error("Rate uncertainty")
+        return s
 
     property mu:
       def __get__(self):
