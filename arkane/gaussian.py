@@ -497,3 +497,31 @@ class GaussianLog(Log):
         if frequency is None:
             raise Exception('Unable to find imaginary frequency in Gaussian output file {0}'.format(self.path))
         return frequency
+
+    def get_level_of_theory(self):
+        """
+        Returns a string describing the level of theory used in the
+        calculation
+
+        To find the theory, the method finds the last location of the
+        output block at the end, combines it and then parses out the
+        level of theory
+        """
+        diagnostic_section = False
+        ending_diagnostics = ''
+        with open(self.path, 'r') as f:
+            line = f.readline()
+            while line != '':
+                if not diagnostic_section and line.startswith(' 1\\1\\'):
+                    diagnostic_section = True
+                    print(ending_diagnostics)
+                    ending_diagnostics = ''
+                if diagnostic_section:
+                    if line == '\n':
+                        diagnostic_section = False
+                    else:
+                        ending_diagnostics += line[1:]
+                line = f.readline()
+
+        diagnostic_list = ending_diagnostics.split('\\')
+        return diagnostic_list[4]

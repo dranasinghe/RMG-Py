@@ -48,6 +48,11 @@ class GaussianTest(unittest.TestCase):
     Contains unit tests for the chempy.io.gaussian module, used for reading
     and writing Gaussian files.
     """
+    @classmethod
+    def setUpClass(cls):
+        cls.gaussianLogFiles = [os.path.join(os.path.dirname(__file__), 'data', 'ethylene.log'),
+                                 os.path.join(os.path.dirname(__file__), 'data', 'ethylene_G3.log'),
+                                 os.path.join(os.path.dirname(__file__), 'data', 'oxygen.log')]
 
     @work_in_progress
     def testLoadEthyleneFromGaussianLog_CBSQB3(self):
@@ -160,6 +165,14 @@ class GaussianTest(unittest.TestCase):
         log = determine_qm_software(os.path.join(os.path.dirname(__file__), 'data', 'oxygen.log'))
         self.assertIsInstance(log, GaussianLog)
 
+    def test_obtain_level_of_theory(self):
+        """
+        Ensures get_level_of_theory works on gaussian log files
+        """
+        level_theory = ['CBS-QB3','G3','UB3LYP']
+        for index, log_file in enumerate(self.gaussianLogFiles):
+            log = GaussianLog(log_file)
+            self.assertEqual(log.get_level_of_theory(), level_theory[index])
 
 if __name__ == '__main__':
     unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))

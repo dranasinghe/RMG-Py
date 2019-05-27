@@ -181,3 +181,11 @@ class Log(object):
         This method returns the T1 diagnostic for certain quantuum jobs
         """
         raise NotImplementedError("get_T1_diagnostic is not implemented for all Log subclasses.")
+
+    def get_level_of_theory(self):
+        """
+        Returns a string describing the level of theory used in the
+        calculation.
+        """
+        raise NotImplementedError("get_level_of_theory is not implemented for the Log class. "
+                                  "This method should be implemented by a subclass.")
