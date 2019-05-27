@@ -592,6 +592,11 @@ class StatMechJob(object):
         except (NotImplementedError, AttributeError):
             t1d = None
         self.supporting_info.append(t1d)
+        try:
+            level_theory = geomLog.get_level_of_theory()
+        except (NotImplementedError, AttributeError):
+            level_theory = None
+        self.supporting_info.append(level_theory)
         #save conformer
         self.species.conformer = conformer
 
