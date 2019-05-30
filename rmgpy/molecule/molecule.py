@@ -1285,9 +1285,13 @@ class Molecule(Graph):
         """
         Return the atoms in the molecule that are labeled.
         """
+        alist = []
         for atom in self.vertices:
-            if atom.label == label: return atom
-        raise ValueError('No atom in the molecule has the label "{0}".'.format(label))
+            if atom.label == label:
+                alist.append(atom)
+        if alist:
+            return alist
+        raise ValueError('No atom in the molecule \n{1}\n has the label "{0}".'.format(label,self.toAdjacencyList()))
 
     def getLabeledAtoms(self):
         """
