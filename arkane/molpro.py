@@ -422,4 +422,3 @@ class MolproLog(Log):
                 items = line.split()
                 return float(items[-1])
         raise ValueError('Unable to find T1 diagnostic in energy file:{}'.format(self.path))
-
