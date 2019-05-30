@@ -1751,7 +1751,7 @@ class Group(Graph):
                     if L == []:
                         return False
                     elif len(L) == 1:
-                    initialMap[atom] = L[0]
+                        initialMap[atom] = L[0]
                     else:
                         keys.append(atom)
                         atms.append(L)
@@ -1764,8 +1764,8 @@ class Group(Graph):
                 else:
                     return False
             else:
-            if not self.isMappingValid(other,initialMap,equivalent=False):
-                return False
+                if not self.isMappingValid(other,initialMap,equivalent=False):
+                    return False
 
         if self.multiplicity:
             for mult1 in self.multiplicity:
@@ -2639,7 +2639,7 @@ class Group(Graph):
             if not inRing: return False
         else: return True
 
-    def mergeGroups(self, other):
+    def mergeGroups(self, other, keepIdenticalLabels=False):
         """
         This function takes `other` :class:Group object and returns a merged :class:Group object based
         on overlapping labeled atoms between self and other
@@ -2670,25 +2670,26 @@ class Group(Graph):
         *2. We need to remove the bond between atomA and atomB. Then we need to add a bond
         between atomA and atomC.
         """
-        bondsToRemove = []
-        for label in overlappingLabels:
-            oldAtomB = self.getLabeledAtom(label)
-            for oldAtomA, oldBondAB in oldAtomB.bonds.iteritems():
-                if not oldAtomA.label in overlappingLabels: #this is bond we need to transfer over
-                    #find and record bondAB from new backbone for later removal
-                    newAtomA = selfDict[oldAtomA]
-                    newAtomB = selfDict[oldAtomB]
-                    newAtomC = mergedGroup.getLabeledAtom(oldAtomB.label)
-                    for atom, newBondAB in newAtomA.bonds.iteritems():
-                        if atom is newAtomB:
-                            bondsToRemove.append(newBondAB)
-                            break
-                    #add bond between atomA and AtomC
-                    newBondAC = GroupBond(newAtomA, newAtomC, order= oldBondAB.order)
-                    mergedGroup.addBond(newBondAC)
-        #remove bonds from mergedGroup
-        for bond in bondsToRemove:
-            mergedGroup.removeBond(bond)
+        if not keepIdenticalLabels:
+            bondsToRemove = []
+            for label in overlappingLabels:
+                oldAtomB = self.getLabeledAtom(label)[0]
+                for oldAtomA, oldBondAB in oldAtomB.bonds.iteritems():
+                    if not oldAtomA.label in overlappingLabels: #this is bond we need to transfer over
+                        #find and record bondAB from new backbone for later removal
+                        newAtomA = selfDict[oldAtomA]
+                        newAtomB = selfDict[oldAtomB]
+                        newAtomC = mergedGroup.getLabeledAtom(oldAtomB.label)[0]
+                        for atom, newBondAB in newAtomA.bonds.iteritems():
+                            if atom is newAtomB:
+                                bondsToRemove.append(newBondAB)
+                                break
+                        #add bond between atomA and AtomC
+                        newBondAC = GroupBond(newAtomA, newAtomC, order= oldBondAB.order)
+                        mergedGroup.addBond(newBondAC)
+            #remove bonds from mergedGroup
+            for bond in bondsToRemove:
+                mergedGroup.removeBond(bond)
 
         return mergedGroup
 

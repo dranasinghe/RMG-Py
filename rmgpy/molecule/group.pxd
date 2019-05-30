@@ -56,7 +56,7 @@ cdef class GroupAtom(Vertex):
     cpdef __gainRadical(self, short radical)
 
     cpdef __loseRadical(self, short radical)
-    
+
     cpdef __gainPair(self, short radical)
 
     cpdef __losePair(self, short radical)
@@ -93,11 +93,11 @@ cdef class GroupBond(Edge):
     cpdef Edge copy(self)
 
     cpdef list getOrderStr(self)
-    
+
     cpdef setOrderStr(self, list newOrder)
-    
+
     cpdef list getOrderNum(self)
-    
+
     cpdef setOrderNum(self, list newOrder)
 
     cpdef __changeBond(self, short order)
@@ -167,7 +167,7 @@ cdef class Group(Graph):
     cpdef fromAdjacencyList(self, str adjlist)
 
     cpdef toAdjacencyList(self, str label=?)
-    
+
     cpdef updateFingerprint(self)
 
     cpdef update_charge(self)
@@ -179,11 +179,11 @@ cdef class Group(Graph):
     cpdef bint isSubgraphIsomorphic(self, Graph other, dict initialMap=?, bint generateInitialMap=?, bint saveOrder=?) except -2
 
     cpdef list findSubgraphIsomorphisms(self, Graph other, dict initialMap=?, bint saveOrder=?)
-    
+
     cpdef bint isIdentical(self, Graph other, bint saveOrder=?)
 
     cpdef bint isSurfaceSite(self) except -2
-    
+
     cpdef bint containsSurfaceSite(self) except -2
 
     cpdef bint isAromaticRing(self)
@@ -208,6 +208,6 @@ cdef class Group(Graph):
 
     cpdef bint isBenzeneExplicit(self)
 
-    cpdef Group mergeGroups(self, Group other)
+    cpdef Group mergeGroups(self, Group other, bint keepIdenticalLabels=?)
 
     cpdef resetRingMembership(self)
