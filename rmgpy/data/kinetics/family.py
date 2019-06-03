@@ -3758,8 +3758,12 @@ class KineticsFamily(Database):
                     mol = deepcopy(r.molecule[0])
                 else:
                     mol = mol.merge(r.molecule[0])
+            try:
+                flag = not self.isEntryMatch(mol,root,noresonance=False)
+            except:
+                flag = not self.isEntryMatch(mol,root,noresonance=True)
 
-            if not self.isEntryMatch(mol,root):
+            if flag:
                 logging.error(root.item.toAdjacencyList())
                 logging.error(mol.toAdjacencyList())
                 for r in rxn.reactants:
@@ -3774,7 +3778,7 @@ class KineticsFamily(Database):
 
             while entry.children != []:
                 for child in entry.children:
-                    if self.isEntryMatch(mol,child):
+                    if self.isEntryMatch(mol,child,noresonance=True):
                         entry = child
                         rxnLists[child.label].append(rxn)
                         break
@@ -3793,15 +3797,18 @@ class KineticsFamily(Database):
         return rxnLists
 
 
-    def isEntryMatch(self, mol, entry):
+    def isEntryMatch(self, mol, entry, noresonance=False):
         """
         determines if the labeled molecule object of reactants matches the entry entry
         """
         if isinstance(entry.item,Group):
+            if not noresonance:
             structs = mol.generate_resonance_structures()
+            else:
+                structs = [mol]
             return any([mol.isSubgraphIsomorphic(entry.item,generateInitialMap=True) for mol in structs])
         elif isinstance(entry.item,LogicOr):
-            return any([self.isEntryMatch(mol,self.groups.entries[c]) for c in entry.item.components])
+            return any([self.isEntryMatch(mol,self.groups.entries[c],noresonance=noresonance) for c in entry.item.components])
 
 
     def retrieveOriginalEntry(self, templateLabel):
