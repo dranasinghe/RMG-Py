@@ -286,15 +286,15 @@ class ReactionRecipe:
                 label1, info, label2 = action[1:]
 
                 if label1 != label2:
-                # Find associated atoms
+                    # Find associated atoms
                     atom1 = struct.getLabeledAtom(label1)[0]
                     atom2 = struct.getLabeledAtom(label2)[0]
                     if atom1 is None or atom2 is None or atom1 is atom2:
                         raise InvalidActionError('Invalid atom labels encountered.')
                 else:
                     atom1,atom2 = struct.getLabeledAtom(label1) #should never have more than two if this action is valid
-                if atom1 is None or atom2 is None or atom1 is atom2:
-                    raise InvalidActionError('Invalid atom labels encountered.')
+                    if atom1 is None or atom2 is None or atom1 is atom2:
+                        raise InvalidActionError('Invalid atom labels encountered.')
                 # Apply the action
                 if action[0] == 'CHANGE_BOND':
                     info = int(info)
@@ -334,15 +334,15 @@ class ReactionRecipe:
                 # Find associated atom
                 atoms = struct.getLabeledAtom(label)
                 for atom in atoms:
-                if atom is None:
-                    raise InvalidActionError('Unable to find atom with label "{0}" while applying reaction recipe.'.format(label))
+                    if atom is None:
+                        raise InvalidActionError('Unable to find atom with label "{0}" while applying reaction recipe.'.format(label))
 
-                # Apply the action
-                for i in range(change):
-                    if (action[0] == 'GAIN_RADICAL' and doForward) or (action[0] == 'LOSE_RADICAL' and not doForward):
-                        atom.applyAction(['GAIN_RADICAL', label, 1])
-                    elif (action[0] == 'LOSE_RADICAL' and doForward) or (action[0] == 'GAIN_RADICAL' and not doForward):
-                        atom.applyAction(['LOSE_RADICAL', label, 1])
+                    # Apply the action
+                    for i in range(change):
+                        if (action[0] == 'GAIN_RADICAL' and doForward) or (action[0] == 'LOSE_RADICAL' and not doForward):
+                            atom.applyAction(['GAIN_RADICAL', label, 1])
+                        elif (action[0] == 'LOSE_RADICAL' and doForward) or (action[0] == 'GAIN_RADICAL' and not doForward):
+                            atom.applyAction(['LOSE_RADICAL', label, 1])
 
             elif action[0] in ['LOSE_PAIR', 'GAIN_PAIR']:
 
@@ -353,15 +353,15 @@ class ReactionRecipe:
                 atoms = struct.getLabeledAtom(label)
 
                 for atom in atoms:
-                if atom is None:
-                    raise InvalidActionError('Unable to find atom with label "{0}" while applying reaction recipe.'.format(label))
+                    if atom is None:
+                        raise InvalidActionError('Unable to find atom with label "{0}" while applying reaction recipe.'.format(label))
 
-                # Apply the action
-                for i in range(change):
-                    if (action[0] == 'GAIN_PAIR' and doForward) or (action[0] == 'LOSE_PAIR' and not doForward):
-                        atom.applyAction(['GAIN_PAIR', label, 1])
-                    elif (action[0] == 'LOSE_PAIR' and doForward) or (action[0] == 'GAIN_PAIR' and not doForward):
-                        atom.applyAction(['LOSE_PAIR', label, 1])
+                    # Apply the action
+                    for i in range(change):
+                        if (action[0] == 'GAIN_PAIR' and doForward) or (action[0] == 'LOSE_PAIR' and not doForward):
+                            atom.applyAction(['GAIN_PAIR', label, 1])
+                        elif (action[0] == 'LOSE_PAIR' and doForward) or (action[0] == 'GAIN_PAIR' and not doForward):
+                            atom.applyAction(['LOSE_PAIR', label, 1])
 
             else:
                 raise InvalidActionError('Unknown action "' + action[0] + '" encountered.')
@@ -1277,23 +1277,9 @@ class KineticsFamily(Database):
             reactantStructure = reactantStructure.merge(s.copy(deep=True))
 
         if forward:
-            # Hardcoding of reaction family for radical recombination (colligation)
-            # because the two reactants are identical, they have the same tags
-            # In this case, we must change the labels from '*' and '*' to '*1' and
-            # '*2'
-            if label == 'r_recombination':
-                identicalCenterCounter = 0
-                for atom in reactantStructure.atoms:
-                    if atom.label == '*':
-                        identicalCenterCounter += 1
-                        atom.label = '*' + str(identicalCenterCounter)
-                if identicalCenterCounter != 2:
-                    raise KineticsError(
-                        'Trying to apply recipe for reaction family {}: Only one occurrence of "*" found.'.format(label)
-                    )
             # Hardcoding of reaction family for peroxyl disproportionation
             # '*1' and '*2' have to be changed to '*3' and '*4' for the second reactant
-            elif label == 'peroxyl_disproportionation':
+            if label == 'peroxyl_disproportionation':
                 identicalCenterCounter1 = identicalCenterCounter2 = 0
                 for atom in reactantStructure.atoms:
                     if atom.label == '*1':
@@ -1368,18 +1354,9 @@ class KineticsFamily(Database):
                 return []
 
         if not forward:
-            # Hardcoding of reaction family for reverse of radical recombination
-            # (Unimolecular homolysis)
-            # Because the two products are identical, they should the same tags
-            # In this case, we must change the labels from '*1' and '*2' to '*' and
-            # '*'
-            if label == 'r_recombination':
-                for atom in productStructure.atoms:
-                    if atom.label == '*1' or atom.label == '*2':
-                        atom.label = '*'
             # Hardcoding of reaction family for reverse of peroxyl disproportionation
             # Labels '*3' and '*4' have to be changed back to '*1' and '*2'
-            elif label == 'peroxyl_disproportionation':
+            if label == 'peroxyl_disproportionation':
                 for atom in productStructure.atoms:
                     if atom.label == '*3':
                         atom.label = '*1'
@@ -2202,7 +2179,7 @@ class KineticsFamily(Database):
                     for atm in atom:
                         atm.label=label
                 else:
-                atom.label = label
+                    atom.label = label
 
             # Generate metadata about the reaction that we will need later
             reaction.pairs = self.getReactionPairs(reaction)
@@ -3531,8 +3508,8 @@ class KineticsFamily(Database):
             else:
                 if any([isinstance(x,list) for x in ent.item.getLabeledAtoms().values()]):
                     grp = grp.mergeGroups(ent.item, keepIdenticalLabels=True)
-            else:
-                grp = grp.mergeGroups(ent.item)
+                else:
+                    grp = grp.mergeGroups(ent.item)
 
 
         #clear everything
@@ -3803,7 +3780,7 @@ class KineticsFamily(Database):
         """
         if isinstance(entry.item,Group):
             if not noresonance:
-            structs = mol.generate_resonance_structures()
+                structs = mol.generate_resonance_structures()
             else:
                 structs = [mol]
             return any([mol.isSubgraphIsomorphic(entry.item,generateInitialMap=True) for mol in structs])
