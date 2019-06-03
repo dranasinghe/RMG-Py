@@ -3529,7 +3529,11 @@ class KineticsFamily(Database):
             if grp is None:
                 grp = ent.item
             else:
+                if any([isinstance(x,list) for x in ent.item.getLabeledAtoms().values()]):
+                    grp = grp.mergeGroups(ent.item, keepIdenticalLabels=True)
+            else:
                 grp = grp.mergeGroups(ent.item)
+
 
         #clear everything
         self.groups.entries = {x.label:x for x in self.groups.entries.itervalues() if x.index == -1}
