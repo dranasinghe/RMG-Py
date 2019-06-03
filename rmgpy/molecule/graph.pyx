@@ -26,8 +26,8 @@
 ###############################################################################
 
 """
-This module contains an implementation of a graph data structure (the 
-:class:`Graph` class) and functions for manipulating that graph, including 
+This module contains an implementation of a graph data structure (the
+:class:`Graph` class) and functions for manipulating that graph, including
 efficient isomorphism functions. This module also contains base classes for
 the vertices and edges (:class:`Vertex` and :class:`Edge`, respectively) that
 are the components of a graph.
@@ -54,7 +54,7 @@ cdef class Vertex(object):
     `edges`             ``dict``        Dictionary of edges with keys being neighboring vertices
     `sortingLabel`      ``int``         An integer label used to sort the vertices
     =================== =============== ========================================
-    
+
     """
 
     def __init__(self):
@@ -217,7 +217,7 @@ cdef class Graph(object):
 
     def __init__(self, vertices=None):
         self.vertices = vertices or []
-        
+
     def __reduce__(self):
         """
         A helper function used when pickling an object.
@@ -321,7 +321,7 @@ cdef class Graph(object):
         cdef dict edges, mapping
         cdef list vertices
         cdef int index1, index2
-        
+
         other = Graph()
         vertices = self.vertices
         mapping = {}
@@ -386,24 +386,28 @@ cdef class Graph(object):
             edges = vertex.edges
             new.addVertex(vertex)
             vertex.edges = edges
+
+        if self is other:
+            other = other.copy(deep=True)
+
         for vertex in other.vertices:
             edges = vertex.edges
             new.addVertex(vertex)
             vertex.edges = edges
 
         return new
-    
+
     cpdef _merge(self, Graph other):
         """
         Merge a Graph into self
         """
         cdef Vertex vertex
-        
+
         for vertex in other.vertices:
             edges = vertex.edges
             self.addVertex(vertex)
             vertex.edges = edges
-            
+
         return
 
     cpdef list split(self):
@@ -415,7 +419,7 @@ cdef class Graph(object):
         cdef Vertex vertex, vertex1, vertex2
         cdef list verticesToMove
         cdef int index
-        
+
         # Create potential output graphs
         new1 = self.copy()
         new2 = Graph()
@@ -433,7 +437,7 @@ cdef class Graph(object):
                 if v2 not in verticesToMove:
                     verticesToMove.append(v2)
             index += 1
-        
+
         # If all atoms are to be moved, simply return new1
         if len(new1.vertices) == len(verticesToMove):
             return [new1]
@@ -442,21 +446,21 @@ cdef class Graph(object):
         for vertex in verticesToMove:
             new2.vertices.append(vertex)
             new1.vertices.remove(vertex)
-        
+
         new = [new2]
         new.extend(new1.split())
         return new
-    
+
     cpdef list _split(self):
         """
         Convert a single Graph object containing two or more unconnected graphs
-        into separate graphs.  Changes the original Graph object, but does not copy the object.   
+        into separate graphs.  Changes the original Graph object, but does not copy the object.
         """
         cdef Graph new1, new2
         cdef Vertex vertex, vertex1, vertex2
         cdef list verticesToMove
         cdef int index
-        
+
         # Create potential output graphs
         new1 = self
         new2 = Graph()
@@ -474,7 +478,7 @@ cdef class Graph(object):
                 if v2 not in verticesToMove:
                     verticesToMove.append(v2)
             index += 1
-        
+
         # If all atoms are to be moved, simply return new1
         if len(new1.vertices) == len(verticesToMove):
             return [new1]
@@ -483,11 +487,11 @@ cdef class Graph(object):
         for vertex in verticesToMove:
             new2.vertices.append(vertex)
             new1.vertices.remove(vertex)
-        
+
         new = [new2]
         new.extend(new1._split())
         return new
-    
+
     cpdef resetConnectivityValues(self):
         """
         Reset any cached connectivity information. Call this method when you
@@ -495,7 +499,7 @@ cdef class Graph(object):
         """
         cdef Vertex vertex
         for vertex in self.vertices: vertex.resetConnectivityValues()
-        
+
     cpdef updateConnectivityValues(self):
         """
         Update the connectivity values for each vertex in the graph. These are
@@ -503,7 +507,7 @@ cdef class Graph(object):
         """
         cdef Vertex vertex1, vertex2
         cdef short count
-        
+
         for vertex1 in self.vertices:
             count = len(vertex1.edges)
             vertex1.connectivity1 = count
@@ -523,10 +527,10 @@ cdef class Graph(object):
         """
         cdef Vertex vertex
         cdef int index
-        
+
         if saveOrder:
             self.ordered_vertices = self.vertices[:]
-            
+
         # Only need to conduct sort if there is an invalid sorting label on any vertex
         for vertex in self.vertices:
             if vertex.sortingLabel < 0: break
@@ -538,7 +542,7 @@ cdef class Graph(object):
         self.vertices.sort(key=getVertexConnectivityValue)
         for index, vertex in enumerate(self.vertices):
             vertex.sortingLabel = index
-    
+
     cpdef restore_vertex_order(self):
         """
         reorder the vertices to what they were before sorting
@@ -548,7 +552,7 @@ cdef class Graph(object):
             raise ValueError('Number of vertices has changed cannot restore original vertex order')
         else:
             self.vertices = self.ordered_vertices
-            
+
     cpdef bint isIsomorphic(self, Graph other, dict initialMap=None, bint saveOrder=False, bint strict=True) except -2:
         """
         Returns :data:`True` if two graphs are isomorphic and :data:`False`
@@ -644,19 +648,19 @@ cdef class Graph(object):
                     chain.remove(vertex2)
         # If we reach this point then we did not find any cycles involving this chain
         return False
-    
+
     cpdef list getAllCyclicVertices(self):
-        """ 
-        Returns all vertices belonging to one or more cycles.        
+        """
+        Returns all vertices belonging to one or more cycles.
         """
         cdef list cyclicVertices
         # Loop through all vertices and check whether they are cyclic
         cyclicVertices = []
         for vertex in self.vertices:
             if self.isVertexInCycle(vertex):
-                cyclicVertices.append(vertex)                
+                cyclicVertices.append(vertex)
         return cyclicVertices
-    
+
     cpdef list getAllPolycyclicVertices(self):
         """
         Return all vertices belonging to two or more cycles, fused or spirocyclic.
@@ -664,7 +668,7 @@ cdef class Graph(object):
         cdef list SSSR, vertices, polycyclicVertices
         SSSR = self.getSmallestSetOfSmallestRings()
         polycyclicVertices = []
-        if SSSR:            
+        if SSSR:
             vertices = []
             for cycle in SSSR:
                 for vertex in cycle:
@@ -672,32 +676,32 @@ cdef class Graph(object):
                         vertices.append(vertex)
                     else:
                         if vertex not in polycyclicVertices:
-                            polycyclicVertices.append(vertex)     
-        return polycyclicVertices        
-    
+                            polycyclicVertices.append(vertex)
+        return polycyclicVertices
+
     cpdef list getPolycyclicRings(self):
         """
         Return a list of cycles that are polycyclic.
-        In other words, merge the cycles which are fused or spirocyclic into 
-        a single polycyclic cycle, and return only those cycles. 
+        In other words, merge the cycles which are fused or spirocyclic into
+        a single polycyclic cycle, and return only those cycles.
         Cycles which are not polycyclic are not returned.
         """
         cdef list polycyclicVertices, continuousCycles, SSSR
         cdef set polycyclicCycle
         cdef Vertex vertex
-        
+
         SSSR = self.getSmallestSetOfSmallestRings()
         if not SSSR:
             return []
-        
+
         polycyclicVertices = self.getAllPolycyclicVertices()
-        
+
         if not polycyclicVertices:
             # no polycyclic vertices detected
             return []
-        else: 
+        else:
             # polycyclic vertices found, merge cycles together
-            # that have common polycyclic vertices            
+            # that have common polycyclic vertices
             continuousCycles = []
             for vertex in polycyclicVertices:
                 # First check if it is in any existing continuous cycles
@@ -709,51 +713,51 @@ cdef class Graph(object):
                     # Otherwise create a new cycle
                     polycyclicCycle = set()
                     continuousCycles.append(polycyclicCycle)
-                    
+
                 for cycle in SSSR:
                     if vertex in cycle:
                         polycyclicCycle.update(cycle)
-                        
+
             # convert each set to a list
             continuousCycles = [list(cycle) for cycle in continuousCycles]
             return continuousCycles
-    
+
     cpdef list getMonocyclicRings(self):
         """
         Return a list of cycles that are monocyclic.
         """
         cdef list polycyclicVertices, SSSR, monocyclicCycles, polycyclicSSSR
         cdef Vertex vertex
-        
+
         SSSR = self.getSmallestSetOfSmallestRings()
         if not SSSR:
             return []
-        
+
         polycyclicVertices = self.getAllPolycyclicVertices()
-        
+
         if not polycyclicVertices:
             # No polycyclicVertices detected, all the rings from getSmallestSetOfSmallestRings
             # are monocyclic
             return SSSR
-        
+
         polycyclicSSSR = []
         for vertex in polycyclicVertices:
             for cycle in SSSR:
                 if vertex in cycle:
                     if cycle not in polycyclicSSSR:
                         polycyclicSSSR.append(cycle)
-        
+
         # remove the polycyclic cycles from the list of SSSR, leaving behind just the monocyclics
         monocyclicCycles = SSSR
         for cycle in polycyclicSSSR:
             monocyclicCycles.remove(cycle)
         return monocyclicCycles
-    
+
     cpdef tuple getDisparateRings(self):
         """
         Get all disjoint monocyclic and polycyclic cycle clusters in the molecule.
         Takes the RC and recursively merges all cycles which share vertices.
-        
+
         Returns: monocyclic_cycles, polycyclic_cycles
         """
         cdef list rc, cycle_list, cycle_sets, monocyclic_cycles, polycyclic_cycles
@@ -779,7 +783,7 @@ cdef class Graph(object):
     cpdef tuple _merge_cycles(self, list cycle_sets):
         """
         Recursively merges cycles that share common atoms.
-        
+
         Returns one list with unmerged cycles and one list with merged cycles.
         """
         cdef list unmerged_cycles, merged_cycles, matched, u, m
@@ -828,7 +832,7 @@ cdef class Graph(object):
             merged_cycles = u + m
 
         return unmerged_cycles, merged_cycles
-       
+
     cpdef list getAllCycles(self, Vertex startingVertex):
         """
         Given a starting vertex, returns a list of all the cycles containing
@@ -986,7 +990,7 @@ cdef class Graph(object):
         is counted as separate from [0,3,2,1]
         """
         cdef Vertex vertex1, vertex2
-        
+
         vertex1 = chain[-1]
         # Loop over each of the atoms neighboring the last atom in the chain
         for vertex2 in vertex1.edges:
@@ -1127,8 +1131,8 @@ cdef class Graph(object):
             if len(cycle) > len(longest_cycle):
                 longest_cycle = cycle
         return longest_cycle
-        
-        
+
+
     cpdef bint isMappingValid(self, Graph other, dict mapping, bint equivalent=True, bint strict=True) except -2:
         """
         Check that a proposed `mapping` of vertices from `self` to `other`
@@ -1151,7 +1155,7 @@ cdef class Graph(object):
             else:
                 if not vertex1.isSpecificCaseOf(vertex2):
                     return False
-            
+
         # Check that any edges connected mapped vertices are equivalent
         vertices1 = mapping.keys()
         vertices2 = mapping.values()
@@ -1170,17 +1174,17 @@ cdef class Graph(object):
                         else:
                             if not edge1.isSpecificCaseOf(edge2):
                                 return False
-                elif not equivalent and selfHasEdge and not otherHasEdge: 
+                elif not equivalent and selfHasEdge and not otherHasEdge:
                     #in the subgraph case self can have edges other doesn't have
                     continue
                 elif selfHasEdge or otherHasEdge:
                     # Only one of the graphs has the edge, so the mapping must be invalid
                     return False
-            
+
         # If we're here then the vertices and edges compare True, so the
         # mapping is valid
         return True
-        
+
     cpdef list get_edges_in_cycle(self, list vertices, bint sort=False):
         """
         For a given list of atoms comprising a ring, return the set of bonds
