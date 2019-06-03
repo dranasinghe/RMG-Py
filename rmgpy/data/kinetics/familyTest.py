@@ -265,7 +265,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -306,13 +306,13 @@ multiplicity 2
 
         mapping1 = {}
         for label, atom in expectedProducts[0].getLabeledAtoms().iteritems():
-            mapping1[atom] = products[0].getLabeledAtom(label)
+            mapping1[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProducts[0].isIsomorphic(products[0], mapping1))
 
         mapping2 = {}
         for label, atom in expectedProducts[1].getLabeledAtoms().iteritems():
-            mapping2[atom] = products[1].getLabeledAtom(label)
+            mapping2[atom] = products[1].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProducts[1].isIsomorphic(products[1], mapping2))
 
@@ -341,7 +341,7 @@ multiplicity 2
 17    H u0 p0 c0 {8,S}
 """)]
         expectedProduct = Molecule().fromAdjacencyList("""
-1  *2 C u0 p0 c0 {2,D} {3,S} {4,S} 
+1  *2 C u0 p0 c0 {2,D} {3,S} {4,S}
 2  *3 C u0 p0 c0 {1,D} {5,S} {6,S}
 3  *1 C u0 p0 c0 {1,S} {7,S} {11,S} {10,S}
 4     C u0 p0 c0 {1,S} {8,D} {12,S}
@@ -365,7 +365,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -408,7 +408,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -461,7 +461,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -520,7 +520,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -563,7 +563,7 @@ multiplicity 2
 
         mapping = {}
         for label, atom in expectedProduct.getLabeledAtoms().iteritems():
-            mapping[atom] = products[0].getLabeledAtom(label)
+            mapping[atom] = products[0].getLabeledAtom(label)[0]
 
         self.assertTrue(expectedProduct.isIsomorphic(products[0], mapping))
 
@@ -656,10 +656,10 @@ class TestTreeGeneration(unittest.TestCase):
             testing=True,
         )
         cls.database.loadForbiddenStructures()
-        
+
         cls.thermoDatabase = ThermoDatabase() #the real full Thermo Database
         cls.thermoDatabase.load(path=os.path.join(settings['database.directory'],'thermo'),libraries=['primaryThermoLibrary'])
-        
+
         cls.kineticsDatabase = KineticsDatabase()
         cls.kineticsDatabase.loadFamilies(
             path=os.path.join(settings['test_data.directory'], 'testing_database/kinetics/families'),
@@ -675,7 +675,7 @@ class TestTreeGeneration(unittest.TestCase):
         import rmgpy.data.rmg
         rmgpy.data.rmg.database = None
 
-    
+
     def test_AClearTree(self):
         """
         Test that the tree was properly cleared before generation
@@ -687,20 +687,20 @@ class TestTreeGeneration(unittest.TestCase):
         root = self.family.groups.entries[self.family.rules.entries.keys()[0]]
         self.assertEquals([root],self.family.forwardTemplate.reactants)
         self.assertEquals([root],self.family.groups.top)
-        
+
     def test_BGenerateTree(self):
         """
         test tree generation process
         """
         def objective(k1s,k2s):
             return len(k1s)*np.std(k1s)+len(k2s)*np.std(k2s)
-        
+
         self.family.generateTree(thermoDatabase=self.thermoDatabase,obj=objective) #test input objective function
-        
+
         self.family.cleanTree(self.thermoDatabase) #reclear
-        
+
         self.family.generateTree(thermoDatabase=self.thermoDatabase) #test that default objective works
-        
+
     def test_CParentChild(self):
         """
         test that the tree is structured properly
@@ -710,30 +710,30 @@ class TestTreeGeneration(unittest.TestCase):
                 self.assertTrue(entry2 in self.family.groups.entries.itervalues())
             if entry.parent:
                 self.assertTrue(entry.parent in self.family.groups.entries.itervalues())
-        
+
         self.assertTrue(self.family.groups.entries['Root'].parent is None)
-                
+
     def test_FRules(self):
         """
         test that there are six rules and each is under a different group
         """
         templateRxnMap = self.family.getReactionMatches(thermoDatabase=self.thermoDatabase,removeDegeneracy=True)
         self.family.makeBMRulesFromTemplateRxnMap(templateRxnMap)
-        
+
         c = 0
         for rs in self.family.rules.entries.itervalues():
             self.assertLess(len(rs),2,'more than one training reaction at a node')
             if len(rs) == 1:
                 c += 1
-        
+
         self.assertEquals(c,6,'incorrect number of kinetics information, expected 6 found {0}'.format(c))
-    
+
     def test_DRegularizationDims(self):
         """
         test that appropriate regularization dimensions have been identified
         """
         templateRxnMap = self.family.getReactionMatches(thermoDatabase=self.database.thermo,estimateThermo=False)
-        
+
         for entry in self.family.groups.entries.itervalues():
             if entry.children == []:
                 continue
@@ -777,9 +777,9 @@ class TestTreeGeneration(unittest.TestCase):
                             vioObj.add((tuple(indc),tuple(rs),tuple(r),typ))
                     else:
                         raise ValueError('extension type {0} not identified within test'.format(typ))
-                        
+
             self.assertTrue(len(vioObj) <= 1,'there were {0} regularization violations at, {1}'.format(len(vioObj),vioObj))
-    
+
     def test_ERegularizationStructure(self):
         """
         test that the tree is structured properly after regularization
@@ -788,7 +788,7 @@ class TestTreeGeneration(unittest.TestCase):
         self.family.generateTree(thermoDatabase=self.thermoDatabase)
         self.family.regularize()
         self.family.checkTree()
-        
+
 class TestGenerateReactions(unittest.TestCase):
 
     @classmethod
@@ -874,14 +874,14 @@ multiplicity 2
         for i, reactant in enumerate(reaction.reactants):
             mapping = {}
             for label, atom in expected_reactants[i].getLabeledAtoms().iteritems():
-                mapping[atom] = reactant.molecule[0].getLabeledAtom(label)
+                mapping[atom] = reactant.molecule[0].getLabeledAtom(label)[0]
 
             self.assertTrue(expected_reactants[i].isIsomorphic(reactant.molecule[0], mapping))
 
         for i, product in enumerate(reaction.products):
             mapping = {}
             for label, atom in expected_products[i].getLabeledAtoms().iteritems():
-                mapping[atom] = product.molecule[0].getLabeledAtom(label)
+                mapping[atom] = product.molecule[0].getLabeledAtom(label)[0]
 
             self.assertTrue(expected_products[i].isIsomorphic(product.molecule[0], mapping))
 
