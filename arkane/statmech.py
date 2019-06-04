@@ -43,6 +43,7 @@ import os
 from scipy import interpolate
 from scipy import integrate as inte
 import numdifftools as nd
+from copy import deepcopy
 
 from rdkit.Chem import GetPeriodicTable
 
@@ -1746,6 +1747,17 @@ class HinderedRotorClassicalND(Mode):
                         xyzs.append(xyz)
                         atnums.append(atnum)
 
+            q = len(phis)
+            for i in xrange(N): #add the negative values to improve fit near 0.0
+                for j in xrange(q):
+                    phi = phis[j]
+                    nvec = deepcopy(phi)
+                    nvec[i] = nvec[i]-360.0
+                    phis.append(nvec)
+                    Es.append(Es[j])
+                    xyzs.append(xyzs[j])
+                    atnums.append(atnums[j])
+
             self.xyzs = np.array(xyzs)
 
             self.Es = np.array(Es)
@@ -1753,7 +1765,6 @@ class HinderedRotorClassicalND(Mode):
             self.Es -= self.E0
 
             self.atnums = np.array(atnums)
-
             self.phis = np.array(phis)
             self.phis *= np.pi/180.0
 
@@ -1774,11 +1785,30 @@ class HinderedRotorClassicalND(Mode):
                 self.atnums = self.atnums[inds]
                 self.xyzs = self.xyzs[inds]
         elif os.path.isfile(self.calcPath): #reading a 1-D scan file, assume internal reduced moment of inertia is constant
+            N = len(self.pivots)
             lg = determine_qm_software(self.calcPath)
             self.Es,self.phis = lg.loadScanEnergies()
             self.atnums = [self.conformer.number for i in xrange(len(self.Es))]
             self.rootDs = [np.prod([self.conformer.getInternalReducedMomentOfInertia(self.pivots[k],
                         self.tops[k],option=3) for k in xrange(len(self.pivots))])**0.5 for i in xrange(len(self.Es))]
+
+            phis = self.phis.tolist()
+
+            for j,phi in enumerate(self.phis): #add the negative values to improve fit near 0.0
+                if phi != 2.0*np.pi:
+                    phis.append(phi-2.0*np.pi)
+
+            phis = np.array(phis)
+            inds = np.argsort(phis)
+            self.phis = phis[inds]
+            Es = self.Es.tolist()
+            Es.extend(Es[1:])
+            self.Es = np.array(Es)[inds]
+            self.atnums.extend(self.atnums[1:])
+            self.atnums = np.array(self.atnums)[inds]
+            self.rootDs.extend(self.rootDs[1:])
+            self.rootDs = np.array(self.rootDs)[inds].tolist()
+
         else:
             raise IOError("path {} is not a file or a directory".format(self.calcPath))
 
@@ -1862,7 +1892,7 @@ class HinderedRotorClassicalND(Mode):
         this is done by projecting their frequencies out of the force constant matrix
         """
         zs = np.zeros(len(self.pivots))
-        hes = nd.Hessian(lambda x: self.V(*x),method='forward')
+        hes = nd.Hessian(lambda x: self.V(*x))
         I = self.rootD(*zs)**(2.0/len(self.pivots))*constants.Na*1e23*1.66053904e-47
         H = hes(zs)
         eigs = np.linalg.eigvals(H)
