@@ -149,20 +149,23 @@ class KineticsJob(object):
             try:
                 self.write_output(output_directory)
             except Exception as e:
-                logging.warning("Could not write kinetics outputfile due to error: {}".format(e))
+                logging.warning("Could not write kinetics output file due to error: "
+                                "{0} in reaction {1}".format(e, self.reaction.label))
             try:
                 self.write_chemkin(output_directory)
             except Exception as e:
-                logging.warning("Could not write kinetics chemkin output due to error: {}".format(e))
+                logging.warning("Could not write kinetics chemkin output due to error: "
+                                "{0} in reaction {1}".format(e, self.reaction.label))
             if plot:
                 try:
                     self.plot(output_directory)
                 except Exception as e:
-                    logging.warning("Could not plot kinetics due to error: {}".format(e))
+                    logging.warning("Could not plot kinetics due to error: "
+                                    "{0} in reaction {1}".format(e, self.reaction.label))
                 try:
                     self.draw(output_directory)
                 except:
-                    logging.warning("Could not draw reaction due to error: {}".format(e))
+                    logging.warning("Could not draw reaction {1} due to error: {0}".format(e, self.reaction.label))
             if self.sensitivity_conditions is not None:
                 logging.info('\n\nRunning sensitivity analysis...')
                 sa(self, output_directory)
@@ -297,8 +300,8 @@ class KineticsJob(object):
             f.write('# krev (TST) = {0} \n'.format(kinetics0rev))
             f.write('# krev (TST+T) = {0} \n\n'.format(kineticsrev))
         # Reaction path degeneracy is INCLUDED in the kinetics itself!
-        string = 'kinetics(label={0!r}, kinetics={1!r})'.format(reaction.label, reaction.kinetics)
-        f.write('{0}\n\n'.format(prettify(string)))
+        rxn_str = 'kinetics(label={0!r}, kinetics={1!r})'.format(reaction.label, reaction.kinetics)
+        f.write('{0}\n\n'.format(prettify(rxn_str)))
 
         f.close()
 
@@ -308,7 +311,7 @@ class KineticsJob(object):
         `species_dictionary.txt` for the outut_directory specified
         """
 
-        # obtain A unit conversion factor
+        # obtain a unit conversion factor
         order = len(self.reaction.reactants)
         factor = 1e6 ** (order - 1)
 

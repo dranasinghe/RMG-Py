@@ -325,7 +325,8 @@ class Arkane:
         for job in self.jobList:
             if isinstance(job, KineticsJob):
                 job.execute(output_directory=self.outputDirectory, plot=self.plot)
-            elif isinstance(job, PressureDependenceJob) and not any([isinstance(job, ExplorerJob) for job in self.jobList]): #if there is an explorer job the pdep job will be run in the explorer job
+            elif isinstance(job, PressureDependenceJob) and not any([isinstance(job, ExplorerJob) for job in self.jobList]):
+                #if there is an explorer job the pdep job will be run in the explorer job
                 if job.network is None:
                     raise InputError(
                         'No network matched the label of the pressureDependence block and there is no explorer block '
