@@ -322,7 +322,8 @@ class Arkane:
                                 'pivot_atoms', 'frozen_atoms'] +
                                 ['energy (cal/mol) {}'.format(i) for i in range(72)])
                 for row in hindered_rotor_info:
-                    writer.writerow([row[0], row[1], row[2], row[3][1],row[5],row[6]] + [a for a in row[4]])
+                    writer.writerow([row[0], row[1], row[2], row[3][1] * 180 / np.pi,
+                                     row[5], row[6]] + [a for a in row[4]])
         # run kinetics and pdep jobs (also writes reaction blocks to Chemkin file)
         for job in self.jobList:
             if isinstance(job, KineticsJob):
