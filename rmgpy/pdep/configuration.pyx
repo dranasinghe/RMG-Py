@@ -267,7 +267,7 @@ cdef class Configuration:
         else:        
             # If the configuration is bimolecular, also include the relative
             # translational motion of the two molecules
-            if self.isBimolecular():
+            if self.isBimolecular() or self.isTermolecular():
                 mass = []
                 for species in self.species:
                     for mode in species.conformer.modes:
@@ -282,29 +282,18 @@ cdef class Configuration:
                             for atom in species.molecule[0].atoms:
                                 m += atom.element.mass
                             mass.append(m * constants.amu * 1000)
-                assert len(mass) == 2
-                mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
-                modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
-            elif self.isTermolecular():
-                mass = []
-                for species in self.species:
-                    for mode in species.conformer.modes:
-                        if isinstance(mode, IdealGasTranslation):
-                            mass.append(mode.mass.value_si)
-                            break
-                    else:
-                        if species.molecularWeight is not None:
-                            mass.append(species.molecularWeight.value_si)
-                        else:
-                            m = 0
-                            for atom in species.molecule[0].atoms:
-                                m += atom.element.mass
-                            mass.append(m * constants.amu * 1000)
-                assert len(mass) == 3
-                mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
-                modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
-                mu2 = 1.0/(1.0/mass[0] + 1.0/mass[2])
-                modes.insert(0, IdealGasTranslation(mass=(mu2/constants.amu,"amu")))
+                if self.isBimolecular():
+                    if len(mass) != 2:
+                        raise AttributeError('Length of masses should be two for bimolecular reactants.')
+                    mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
+                    modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
+                else:
+                    if len(mass) != 3:
+                        raise AttributeError('Length of masses should be three for termolecular reactants.')
+                    mu = 1.0/(1.0/mass[0] + 1.0/mass[1])
+                    modes.insert(0, IdealGasTranslation(mass=(mu/constants.amu,"amu")))
+                    mu2 = 1.0/(1.0/mass[0] + 1.0/mass[2])
+                    modes.insert(0, IdealGasTranslation(mass=(mu2/constants.amu,"amu")))
             if rmgmode:
                 # Compute the density of states by direct count
                 # This is currently faster than the method of steepest descents,
