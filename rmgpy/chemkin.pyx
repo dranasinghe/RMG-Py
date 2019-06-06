@@ -1430,7 +1430,7 @@ def getSpeciesIdentifier(species):
 
 ################################################################################
 
-def writeThermoEntry(species, elementCounts=None, verbose=True, use_label = False):
+def writeThermoEntry(species, elementCounts=None, verbose=True, use_label=False):
     """
     Return a string representation of the NASA model readable by Chemkin.
     To use this method you must have exactly two NASA polynomials in your
@@ -1511,7 +1511,7 @@ def writeThermoEntry(species, elementCounts=None, verbose=True, use_label = Fals
 
 ################################################################################
 
-def writeReactionString(reaction, javaLibrary = False, use_label = False):
+def writeReactionString(reaction, javaLibrary=False, use_label=False):
     """
     Return a reaction string in chemkin format. `use_label` flag indicates that
     the reaction string should use the species.label instead of the default RMG
@@ -1587,7 +1587,7 @@ def writeReactionString(reaction, javaLibrary = False, use_label = False):
     
 ################################################################################
 
-def writeKineticsEntry(reaction, speciesList, verbose = True, javaLibrary = False, commented=False, use_label = False):
+def writeKineticsEntry(reaction, speciesList, verbose=True, javaLibrary=False, commented=False, use_label=False):
     """
     Return a string representation of the reaction as used in a Chemkin
     file. Use `verbose = True` to turn on kinetics comments.
