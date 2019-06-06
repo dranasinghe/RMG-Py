@@ -197,7 +197,8 @@ class StatMechJob(object):
             try:
                 self.write_output(output_directory)
             except Exception as e:
-                logging.warning("Could not write statmech outputfile due to error: ".format(e))
+                logging.warning("Could not write statmech output file due to error: "
+                                "{0} in species {1}".format(e, self.species.label))
             if hasattr(self,'hindered_rotor_plots'):
                 try:
                     hr_dir = os.path.join(output_directory,'plots')
@@ -205,7 +206,8 @@ class StatMechJob(object):
                         os.mkdir(hr_dir)
                     self.save_hindered_rotor_figures(hr_dir)
                 except Exception as e:
-                    logging.warning("Could not save hindered rotor scans due to error: {}".format(e))
+                    logging.warning("Could not save hindered rotor scans due to error: "
+                                    "{0} in species {1}".format(e, self.species.label))
         logging.debug('Finished statmech job for species {0}.'.format(self.species))
         logging.debug(repr(self.species))
 
@@ -606,7 +608,7 @@ class StatMechJob(object):
         at `path` on disk.
         """
 
-        outputFile = os.path.join(output_directory,'output.py')
+        outputFile = os.path.join(output_directory, 'output.py')
         logging.info('Saving statistical mechanics parameters for {0}...'.format(self.species.label))
         f = open(outputFile, 'a')
 
