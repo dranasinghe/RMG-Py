@@ -108,7 +108,7 @@ cdef class Configuration:
 
     cpdef bint isTermolecular(self) except -2:
         """
-        Return ``True`` if the configuration represents a bimolecular reactant
+        Return ``True`` if the configuration represents a termolecular reactant
         or product channel, or ``False`` otherwise.
         """
         return len(self.species) == 3
