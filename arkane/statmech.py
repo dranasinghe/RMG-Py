@@ -192,7 +192,7 @@ class StatMechJob(object):
         Execute the statistical mechanics job, saving the results to the
         given `outputFile` on disk.
         """
-        self.load(pdep,plot)
+        self.load(pdep, plot)
         if output_directory is not None:
             try:
                 self.write_output(output_directory)
