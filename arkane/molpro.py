@@ -412,13 +412,13 @@ class MolproLog(Log):
     def get_T1_diagnostic(self):
         """
         Returns the T1 diagnostic from output log.
-        If multiple occur, returns the last occurance
+        If multiple occurrences exist, returns the last occurence
         """
         with open(self.path) as f:
-            log = f.read().splitlines()
+            log = f.readlines()
 
         for line in reversed(log):
             if 'T1 diagnostic:  ' in line:
                 items = line.split()
                 return float(items[-1])
-        raise ValueError('Unable to find T1 diagnostic in energy file:{}'.format(self.path))
+        raise ValueError('Unable to find T1 diagnostic in energy file: {}'.format(self.path))

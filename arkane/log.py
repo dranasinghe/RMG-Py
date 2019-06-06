@@ -178,7 +178,7 @@ class Log(object):
 
     def get_T1_diagnostic(self):
         """
-        This method returns the T1 diagnostic for certain quantuum jobs
+        This method returns the T1 diagnostic for certain quantum jobs
         """
         raise NotImplementedError("get_T1_diagnostic is not implemented for all Log subclasses.")
 
