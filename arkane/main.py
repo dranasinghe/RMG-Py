@@ -316,11 +316,13 @@ class Arkane:
                     writer.writerow([label, row[1], row[2], row[3], rot, freq, row[7],row[8], row[9], atoms, row[12], row[13]])
         if hindered_rotor_info:
             hr_file = os.path.join(self.outputDirectory, 'hindered_rotor_scan_data.csv')
+            # find longest length to set column number for energies
+            max_energy_length = max([len(hr[4]) for hr in hindered_rotor_info])
             with open(hr_file, 'wb') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(['species', 'rotor_number', 'symmetry', 'resolution (degrees)',
                                 'pivot_atoms', 'frozen_atoms'] +
-                                ['energy (cal/mol) {}'.format(i) for i in range(72)])
+                                ['energy (cal/mol) {}'.format(i) for i in range(max_energy_length)])
                 for row in hindered_rotor_info:
                     writer.writerow([row[0], row[1], row[2], row[3][1] * 180 / np.pi,
                                      row[5], row[6]] + [a for a in row[4]])
