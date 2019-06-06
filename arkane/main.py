@@ -279,7 +279,7 @@ class Arkane:
                 job.execute(output_directory=self.outputDirectory, plot=self.plot, pdep=is_pdep(self.jobList))
                 if hasattr(job, 'supporting_info'):
                     supporting_info.append(job.supporting_info)
-                if hasattr(job,'raw_hindered_rotor_data'):
+                if hasattr(job, 'raw_hindered_rotor_data'):
                     for hr_info in job.raw_hindered_rotor_data:
                         hindered_rotor_info.append(hr_info)
 
@@ -315,12 +315,14 @@ class Arkane:
                     atoms = ', '.join(["{0}    {1}".format(atom,"    ".join([str(c) for c in coords])) for atom, coords in zip(row[10], row[11])])
                     writer.writerow([label, row[1], row[2], row[3], rot, freq, row[7],row[8], row[9], atoms, row[12], row[13]])
         if hindered_rotor_info:
-            hr_file = os.path.join(self.outputDirectory,'hindered_rotor_scan_data.csv')
+            hr_file = os.path.join(self.outputDirectory, 'hindered_rotor_scan_data.csv')
             with open(hr_file, 'wb') as csvfile:
-                 writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                 writer.writerow(['species','rotor_number','symmetry', 'spacing (radians)', 'pivot_atoms','frozen_atoms'] + ['energy (cal/mol) {}'.format(i) for i in range(72)])
-                 for row in hindered_rotor_info:
-                     writer.writerow([row[0], row[1], row[2], row[3][1],row[5],row[6]] + [a for a in row[4]])
+                writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(['species', 'rotor_number', 'symmetry', 'resolution (degrees)',
+                                'pivot_atoms', 'frozen_atoms'] +
+                                ['energy (cal/mol) {}'.format(i) for i in range(72)])
+                for row in hindered_rotor_info:
+                    writer.writerow([row[0], row[1], row[2], row[3][1],row[5],row[6]] + [a for a in row[4]])
         # run kinetics and pdep jobs (also writes reaction blocks to Chemkin file)
         for job in self.jobList:
             if isinstance(job, KineticsJob):

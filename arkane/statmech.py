@@ -472,7 +472,7 @@ class StatMechJob(object):
                     if isinstance(scanLog, Log) and not isinstance(energy, (GaussianLog, QChemLog, MolproLog)):
                         scanLog = determine_qm_software(os.path.join(directory, scanLog.path))
                     scanLog.path = os.path.join(directory, scanLog.path)
-                    if isinstance(scanLog, (GaussianLog,QChemLog)):
+                    if isinstance(scanLog, (GaussianLog, QChemLog)):
                         v_list, angle = scanLog.loadScanEnergies()
                         try:
                             pivot_atoms = scanLog.load_scan_pivot_atoms()
