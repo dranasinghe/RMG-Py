@@ -277,7 +277,7 @@ class Arkane:
                 job.execute(output_directory=self.outputDirectory, plot=self.plot)
             if isinstance(job, StatMechJob):
                 job.execute(output_directory=self.outputDirectory, plot=self.plot, pdep=is_pdep(self.jobList))
-                if hasattr(job,'supporting_info'):
+                if hasattr(job, 'supporting_info'):
                     supporting_info.append(job.supporting_info)
                 if hasattr(job,'raw_hindered_rotor_data'):
                     for hr_info in job.raw_hindered_rotor_data:
@@ -289,7 +289,7 @@ class Arkane:
             f.write('REACTIONS    KCAL/MOLE   MOLES\n\n')
 
         if supporting_info:
-            #write supporting_info.csv for statmech jobs
+            # write supporting_info.csv for statmech jobs
             supporting_info_file = os.path.join(self.outputDirectory, 'supporting_information.csv')
             with open(supporting_info_file, 'wb') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
