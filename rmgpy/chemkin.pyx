@@ -73,7 +73,7 @@ def readThermoEntry(entry, Tmin=0, Tint=0, Tmax=0):
     the label of the species and the thermodynamics model as a :class:`NASA`
     object.
     
-    Format specification at http://www2.galcit.caltech.edu/EDL/public/formats/chemkin.html
+    Format specification at http://akrmys.com/public/chemkin/CKm_inp.html.en#THRM
     """
     lines = entry.splitlines()
     species = str(lines[0][0:22].split()[0].strip())
