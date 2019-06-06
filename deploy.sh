@@ -41,7 +41,7 @@ cd $TARGET_DIR
 
 # create a new branch in RMG-tests with the name equal to
 # the branch name of the tested RMG-Py branch:
-RMGTESTSBRANCH=rmgpy-$DEPLOY_BRANCH
+RMGTESTSBRANCH=rmgpydb-$DEPLOY_BRANCH
 
 git checkout -b $RMGTESTSBRANCH || true
 git checkout $RMGTESTSBRANCH
